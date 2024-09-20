@@ -50,7 +50,7 @@ wss.on('connection', (ws) => {
                 addTodo(data.projectId, data.text, data.assignee, data.priority, data.dueDate);
                 break;
             case 'UPDATE_TODO':
-                const updatedTodo = data.todo;  // 이 줄을 추가합니다.
+                const updatedTodo = data.todo;  
                 if (updatedTodo && updatedTodo.id) {
                     updateTodo(data.projectId, updatedTodo);
                     broadcastToAll(JSON.stringify({
@@ -68,6 +68,9 @@ wss.on('connection', (ws) => {
             case 'ADD_ASSIGNEE':
                 addAssignee(data.projectId, data.assigneeName);
                 break;
+            case 'DELETE_ASSIGNEE':
+                deleteAssignee(data.projectId, data.assigneeName);
+                break;
         }
     });
 });
@@ -81,7 +84,7 @@ function addProject(name) {
     projects.push(newProject);
     todos[newProject.id] = [];
     projectAssignees[newProject.id] = [];
-    broadcastToAll(JSON.stringify({ type: 'PROJECT_ADDED', project: newProject }));
+    broadcastToAll({ type: 'PROJECT_ADDED', project: newProject });
     console.log('프로젝트 추가됨:', newProject);  // 디버깅을 위한 로그
 }
 
@@ -161,6 +164,17 @@ function addAssignee(projectId, assigneeName) {
         projectAssignees[projectId].push(assigneeName);
         broadcastToAll({ 
             type: 'ASSIGNEE_ADDED', 
+            projectId: projectId, 
+            assigneeName: assigneeName 
+        });
+    }
+}
+
+function deleteAssignee(projectId, assigneeName) {
+    if (projectAssignees[projectId]) {
+        projectAssignees[projectId] = projectAssignees[projectId].filter(a => a !== assigneeName);
+        broadcastToAll({ 
+            type: 'ASSIGNEE_DELETED', 
             projectId: projectId, 
             assigneeName: assigneeName 
         });
