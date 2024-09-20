@@ -255,3 +255,95 @@ th {
 .todo-checkbox, .todo-assignee, .todo-priority, .todo-due-date {
     width: 100%;
 }
+
+/* 새로운 스타일 추가 */
+#todo-filters {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+#todo-filters select {
+    flex: 1;
+}
+
+#todo-input {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#todo-input input,
+#todo-input select {
+    flex: 1;
+}
+
+#todo-search {
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+#project-statistics {
+    background-color: var(--card-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1rem;
+    margin-top: 20px;
+}
+
+.todo-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.todo-table th,
+.todo-table td {
+    padding: 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.todo-table th {
+    background-color: var(--card-bg-color);
+    font-weight: bold;
+}
+
+.todo-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+#project-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#project-form input {
+    flex: 1;
+}
+
+#project-search {
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+}
+
+#new-assignee-name {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+@media (max-width: 600px) {
+    #todo-filters,
+    #todo-input {
+        flex-direction: column;
+    }
+
+    .todo-table th,
+    .todo-table td {
+        padding: 0.25rem;
+    }
+}

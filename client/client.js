@@ -34,11 +34,11 @@ function handleWebSocketMessage(data) {
             projects = data.projects;
             todos = data.todos;
             projectAssignees = data.projectAssignees || {};
-            updateProjectList(); // 여기서 한 번만 호출합니다.
+            updateProjectList();
             break;
         case 'PROJECT_ADDED':
             projects.push(data.project);
-            updateProjectList(); // 프로젝트가 추가될 때만 업데이트합니다.
+            updateProjectList();
             break;
         case 'PROJECT_UPDATED':
             const projectIndex = projects.findIndex(p => p.id === data.project.id);
@@ -58,7 +58,9 @@ function handleWebSocketMessage(data) {
                 todos[data.projectId] = [];
             }
             if (data.type === 'TODO_ADDED') {
-                todos[data.projectId].push(data.todo);
+                if (!todos[data.projectId].some(todo => todo.id === data.todo.id)) {
+                    todos[data.projectId].push(data.todo);
+                }
             } else if (data.type === 'TODO_UPDATED') {
                 const todoIndex = todos[data.projectId].findIndex(t => t.id === data.todo.id);
                 if (todoIndex !== -1) {
@@ -67,9 +69,12 @@ function handleWebSocketMessage(data) {
             } else if (data.type === 'TODO_DELETED') {
                 todos[data.projectId] = todos[data.projectId].filter(t => t.id !== data.todoId);
             }
-            updateTodoList(data.projectId);
-            updateAssigneeProgress(data.projectId);
-            updatePriorityTodoList(data.projectId);
+            const currentProjectId = getCurrentProjectId();
+            if (currentProjectId === data.projectId) {
+                filterAndSortTodos(data.projectId);
+                updateAssigneeProgress(data.projectId);
+                showProjectStatistics(data.projectId);
+            }
             break;
         case 'ASSIGNEE_ADDED':
             if (!projectAssignees[data.projectId]) {
@@ -80,6 +85,11 @@ function handleWebSocketMessage(data) {
             }
             updateAllTodoAssigneeOptions(data.projectId);
             updateAssigneeList(data.projectId);
+            // 현재 프로젝트의 할 일 목록을 업데이트
+            const currentProjectIdForAssignee = getCurrentProjectId();
+            if (currentProjectIdForAssignee === data.projectId) {
+                filterAndSortTodos(data.projectId);
+            }
             break;
         case 'ASSIGNEE_DELETED':
             projectAssignees[data.projectId] = projectAssignees[data.projectId].filter(
@@ -102,12 +112,12 @@ function showProjectList() {
         <div id="project-list"></div>
     `;
     document.getElementById('add-project-btn').addEventListener('click', addProject);
-    updateProjectList(); // 여기서 한 번만 호출합니다.
+    updateProjectList();
 }
 
 function updateProjectList(filteredProjects = projects) {
     const projectList = document.getElementById('project-list');
-    projectList.innerHTML = ''; // 기존 목록을 완전히 지웁니다.
+    projectList.innerHTML = '';
     filteredProjects.forEach(project => {
         const projectElement = createProjectElement(project);
         projectList.appendChild(projectElement);
@@ -170,16 +180,15 @@ function showProjectDetails(projectId) {
         <button onclick="showManageAssigneesModal('${projectId}')">담당자 관리</button>
         <input type="text" id="todo-search" placeholder="할 일 검색" onkeyup="searchTodos('${projectId}')">
         <h3>우선 처리할 일</h3>
-        <ul id="priority-todo-list"></ul>
+        <div id="priority-todo-list"></div>
         <h3>전체 할 일 목록</h3>
-        <ul id="todo-list"></ul>
+        <div id="todo-list"></div>
         <div id="project-statistics"></div>
         <button onclick="showProjectList()">프로젝트 목록으로 돌아가기</button>
     `;
 
     updateAssigneeProgress(projectId);
-    updateTodoList(projectId);
-    updatePriorityTodoList(projectId);
+    filterAndSortTodos(projectId);
     showProjectStatistics(projectId);
 }
 
@@ -239,26 +248,21 @@ function getAssigneeOptions(projectId, currentAssignee = '') {
 }
 
 function updateTodoAssignee(todoId, newAssignee) {
-    const todoElement = document.getElementById(`todo-${todoId}`);
-    if (!todoElement) {
-        console.error(`Todo element with id ${todoId} not found`);
-        return;
-    }
-
     const projectId = getCurrentProjectId();
     if (!projectId) {
-        console.error('Current project ID not found');
+        console.error('현재 프로젝트 ID를 찾을 수 없습니다.');
         return;
     }
 
-    const todoText = todoElement.querySelector('.todo-text').textContent;
-    const completed = todoElement.querySelector('.todo-checkbox').checked;
-    
-    socket.send(JSON.stringify({
-        type: 'UPDATE_TODO',
-        projectId: projectId,
-        todo: { id: todoId, text: todoText, completed: completed, assignee: newAssignee }
-    }));
+    const projectTodos = todos[projectId] || [];
+    const todo = projectTodos.find(t => t.id === todoId);
+    if (!todo) {
+        console.error(`ID가 ${todoId}인 할 일을 찾을 수 없습니다.`);
+        return;
+    }
+
+    todo.assignee = newAssignee;
+    updateTodo(projectId, todo);
 }
 
 function updateTodo(projectId, updatedTodo) {
@@ -355,6 +359,8 @@ function addNewAssignee(projectId) {
             assigneeName: newAssigneeName
         }));
         document.getElementById('new-assignee-name').value = '';
+        // 모달을 닫습니다.
+        closeModal();
     }
 }
 
@@ -370,7 +376,7 @@ function deleteAssignee(projectId, assigneeName) {
 
 function updateAssigneeList(projectId) {
     const assigneeList = document.getElementById('assignee-list');
-    if (!assigneeList) return; // assignee-list가 없으면 함수를 종료합니다.
+    if (!assigneeList) return;
     
     const assignees = getAssignees(projectId);
     
@@ -386,7 +392,6 @@ function updateAssigneeList(projectId) {
     
     assigneeList.innerHTML = assigneeListHTML;
     
-    // 모든 할 일 항목의 담당자 선택 옵션 업데이트
     updateAllTodoAssigneeOptions(projectId);
 }
 
@@ -394,14 +399,22 @@ function updateAllTodoAssigneeOptions(projectId) {
     const todoItems = document.querySelectorAll('.todo-item');
     todoItems.forEach(todoItem => {
         const assigneeSelect = todoItem.querySelector('.todo-assignee');
-        const currentAssignee = assigneeSelect.value;
-        assigneeSelect.innerHTML = getAssigneeOptions(projectId, currentAssignee);
+        if (assigneeSelect) {
+            const currentAssignee = assigneeSelect.value;
+            assigneeSelect.innerHTML = getAssigneeOptions(projectId, currentAssignee);
+        }
     });
     
-    // 새 할 일 추가 폼의 담당자 선택 옵션도 업데이트
     const newTodoAssigneeSelect = document.getElementById('new-todo-assignee');
     if (newTodoAssigneeSelect) {
         newTodoAssigneeSelect.innerHTML = getAssigneeOptions(projectId);
+    }
+
+    // 필터 옵션도 업데이트
+    const filterAssigneeSelect = document.getElementById('filter-assignee');
+    if (filterAssigneeSelect) {
+        const currentFilterAssignee = filterAssigneeSelect.value;
+        filterAssigneeSelect.innerHTML = `<option value="all">모든 담당자</option>${getAssigneeOptions(projectId, currentFilterAssignee)}`;
     }
 }
 
@@ -416,7 +429,7 @@ function deleteTodo(todoId) {
             }));
         }
     } else {
-        console.error('현재 프로젝트 ID를 찾을 수 없습니다.');
+        console.error('현재 프로젝트 ID를 을 수 없습니다.');
     }
 }
 
@@ -445,7 +458,6 @@ function filterAndSortTodos(projectId) {
 
     let filteredTodos = todos[projectId] || [];
 
-    // 필터링
     if (filterPriority !== 'all') {
         filteredTodos = filteredTodos.filter(todo => todo.priority === filterPriority);
     }
@@ -453,15 +465,15 @@ function filterAndSortTodos(projectId) {
         filteredTodos = filteredTodos.filter(todo => todo.assignee === filterAssignee);
     }
 
-    // 정렬
     filteredTodos.sort((a, b) => {
         switch (sortBy) {
             case 'priority':
-                return b.priority.localeCompare(a.priority);
+                const priorityOrder = { high: 3, medium: 2, low: 1 };
+                return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
             case 'dueDate':
-                return new Date(a.dueDate) - new Date(b.dueDate);
+                return new Date(a.dueDate || '9999-12-31') - new Date(b.dueDate || '9999-12-31');
             case 'assignee':
-                return a.assignee.localeCompare(b.assignee);
+                return (a.assignee || '').localeCompare(b.assignee || '');
             default:
                 return 0;
         }
@@ -531,7 +543,6 @@ function showManageAssigneesModal(projectId) {
     `;
     document.body.appendChild(modal);
 
-    // 모달 외부 클릭 시 닫기
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             closeModal();
@@ -548,620 +559,96 @@ function closeModal() {
 
 function updateTodoList(projectId, filteredTodos = todos[projectId] || []) {
     const todoListElement = document.getElementById('todo-list');
-    todoListElement.innerHTML = `
-        <table>
-            <thead>
-                <tr>
-                    <th>완료</th>
-                    <th>내용</th>
-                    <th>담당자</th>
-                    <th>우선순위</th>
-                    <th>마감일</th>
-                    <th>작업</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-    `;
-    const tableBody = todoListElement.querySelector('tbody');
-
-    filteredTodos.forEach(todo => {
-        const todoRow = createTodoRow(todo, projectId);
-        tableBody.appendChild(todoRow);
-    });
-}
-
-function createTodoRow(todo, projectId) {
-    const row = document.createElement('tr');
-    row.className = 'todo-item';
-    row.id = `todo-${todo.id}`;
-    row.innerHTML = `
-        <td><input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''} onchange="updateTodoStatus('${todo.id}', this.checked)"></td>
-        <td><span class="todo-text">${todo.text}</span></td>
-        <td>
-            <select class="todo-assignee" onchange="updateTodoAssignee('${todo.id}', this.value)">
-                ${getAssigneeOptions(projectId, todo.assignee)}
-            </select>
-        </td>
-        <td>
-            <select class="todo-priority" onchange="updateTodoPriority('${todo.id}', this.value)">
-                <option value="low" ${todo.priority === 'low' ? 'selected' : ''}>낮음</option>
-                <option value="medium" ${todo.priority === 'medium' ? 'selected' : ''}>중간</option>
-                <option value="high" ${todo.priority === 'high' ? 'selected' : ''}>높음</option>
-            </select>
-        </td>
-        <td><input type="date" class="todo-due-date" value="${todo.dueDate || ''}" onchange="updateTodoDueDate('${todo.id}', this.value)"></td>
-        <td><button onclick="deleteTodo('${todo.id}')">삭제</button></td>
-    `;
-    return row;
-}
-
-function updatePriorityTodoList(projectId) {
     const priorityTodoListElement = document.getElementById('priority-todo-list');
-    priorityTodoListElement.innerHTML = `
-        <table>
-            <thead>
-                <tr>
-                    <th>완료</th>
-                    <th>내용</th>
-                    <th>담당자</th>
-                    <th>우선순위</th>
-                    <th>마감일</th>
-                    <th>작업</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-    `;
-    const tableBody = priorityTodoListElement.querySelector('tbody');
-
-    const projectTodos = todos[projectId] || [];
-    const priorityTodos = getPriorityTodos(projectTodos);
     
-    priorityTodos.forEach(todo => {
-        const todoRow = createTodoRow(todo, projectId);
-        tableBody.appendChild(todoRow);
-    });
-}
+    todoListElement.innerHTML = '';
+    priorityTodoListElement.innerHTML = '';
 
-function getPriorityTodos(todos) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const table = createTodoTable(filteredTodos, projectId);
+    todoListElement.appendChild(table);
 
-    return todos.filter(todo => {
-        if (todo.completed) return false;
+    const priorityTodos = getPriorityTodos(filteredTodos, projectId);
+    const priorityTable = createTodoTable(priorityTodos, projectId);
+    priorityTodoListElement.appendChild(priorityTable);
 
-        const dueDate = new Date(todo.dueDate);
-        const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-
-        return (todo.priority === 'high') ||
-               (todo.priority === 'medium' && daysUntilDue <= 3) ||
-               (daysUntilDue <= 1);
-    }).sort((a, b) => {
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
-        const dateA = new Date(a.dueDate);
-        const dateB = new Date(b.dueDate);
-
-        if (priorityOrder[b.priority] !== priorityOrder[a.priority]) {
-            return priorityOrder[b.priority] - priorityOrder[a.priority];
-        }
-        return dateA - dateB;
-    });
-}
-
-function addTodo(projectId) {
-    const todoText = document.getElementById('new-todo-text').value.trim();
-    const assignee = document.getElementById('new-todo-assignee').value;
-    const priority = document.getElementById('new-todo-priority').value;
-    const dueDate = document.getElementById('new-todo-due-date').value;
-    if (todoText) {
-        socket.send(JSON.stringify({ 
-            type: 'ADD_TODO', 
-            projectId: projectId, 
-            text: todoText, 
-            assignee: assignee,
-            priority: priority,
-            dueDate: dueDate
-        }));
-        // 입력 필드 초기화
-        document.getElementById('new-todo-text').value = '';
-        document.getElementById('new-todo-assignee').value = '';
-        document.getElementById('new-todo-priority').value = 'low';
-        document.getElementById('new-todo-due-date').value = '';
-    }
-}
-
-window.addEventListener('load', () => {
-    console.log('페이지 로드됨');
-    initializeWebSocket();
-});
-
-function showProjectDetails(projectId) {
-    const mainContent = document.getElementById('main-content');
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return;
-
-    mainContent.innerHTML = `
-        <h2 id="project-details-title" data-project-id="${projectId}">${project.name} 상세</h2>
-        <div id="assignee-progress"></div>
-        <div id="todo-filters">
-            <select id="filter-priority" onchange="filterAndSortTodos('${projectId}')">
-                <option value="all">모든 우선순위</option>
-                <option value="high">높음</option>
-                <option value="medium">중간</option>
-                <option value="low">낮음</option>
-            </select>
-            <select id="filter-assignee" onchange="filterAndSortTodos('${projectId}')">
-                <option value="all">모든 담당자</option>
-                ${getAssigneeOptions(projectId)}
-            </select>
-            <select id="sort-by" onchange="filterAndSortTodos('${projectId}')">
-                <option value="priority">우선순위순</option>
-                <option value="dueDate">마감일순</option>
-                <option value="assignee">담당자순</option>
-            </select>
-        </div>
-        <div id="todo-input">
-            <input type="text" id="new-todo-text" placeholder="새 할 일">
-            <select id="new-todo-assignee">
-                ${getAssigneeOptions(projectId)}
-            </select>
-            <select id="new-todo-priority">
-                <option value="low">낮음</option>
-                <option value="medium">중간</option>
-                <option value="high">높음</option>
-            </select>
-            <input type="date" id="new-todo-due-date">
-            <button onclick="addTodo('${projectId}')">할 일 추가</button>
-        </div>
-        <button onclick="showManageAssigneesModal('${projectId}')">담당자 관리</button>
-        <input type="text" id="todo-search" placeholder="할 일 검색" onkeyup="searchTodos('${projectId}')">
-        <h3>우선 처리할 일</h3>
-        <ul id="priority-todo-list"></ul>
-        <h3>전체 할 일 목록</h3>
-        <ul id="todo-list"></ul>
-        <div id="project-statistics"></div>
-        <button onclick="showProjectList()">프로젝트 목록으로 돌아가기</button>
-    `;
-
-    updateAssigneeProgress(projectId);
-    updateTodoList(projectId);
-    updatePriorityTodoList(projectId);
-    showProjectStatistics(projectId);
-}
-
-function searchProjects() {
-    const searchInput = document.getElementById('project-search');
-    const searchTerm = searchInput.value.toLowerCase();
-    const filteredProjects = projects.filter(project => project.name.toLowerCase().includes(searchTerm));
-    updateProjectList(filteredProjects);
-}
-
-function searchTodos(projectId) {
-    const searchInput = document.getElementById('todo-search');
-    const searchTerm = searchInput.value.toLowerCase();
-    const filteredTodos = todos[projectId] || [];
-    const filteredAndSortedTodos = filteredTodos.filter(todo => todo.text.toLowerCase().includes(searchTerm));
-    updateTodoList(projectId, filteredAndSortedTodos);
-}
-
-function showManageAssigneesModal(projectId) {
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    const assignees = getAssignees(projectId);
-    
-    let assigneeListHTML = '';
-    assignees.forEach(assignee => {
-        assigneeListHTML += `
-            <li>
-                ${assignee}
-                <button onclick="deleteAssignee('${projectId}', '${assignee}')">삭제</button>
-            </li>
-        `;
-    });
-
-    modal.innerHTML = `
-        <div class="modal-content">
-            <h3>담당자 관리</h3>
-            <ul id="assignee-list">
-                ${assigneeListHTML}
-            </ul>
-            <input type="text" id="new-assignee-name" placeholder=" 담당자 이름">
-            <button onclick="addNewAssignee('${projectId}')">담당자 추가</button>
-            <button onclick="closeModal()">닫기</button>
-        </div>
-    `;
-    document.body.appendChild(modal);
-
-    // 모달 외부 클릭 시 닫기
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            closeModal();
-        }
-    });
-}
-
-function closeModal() {
-    const modal = document.querySelector('.modal');
-    if (modal) {
-        modal.remove();
-    }
-}
-
-function updateAssigneeProgress(projectId) {
-    const assigneeProgress = document.getElementById('assignee-progress');
-    if (!assigneeProgress) return;
-
-    const projectTodos = todos[projectId] || [];
-    const assignees = projectAssignees[projectId] || [];
-
-    let assigneeProgressHTML = '';
-    assignees.forEach(assignee => {
-        const assigneeTodos = projectTodos.filter(todo => todo.assignee === assignee);
-        const totalTodos = assigneeTodos.length;
-        const completedTodos = assigneeTodos.filter(todo => todo.completed).length;
-        const completionRate = totalTodos > 0 ? (completedTodos / totalTodos * 100).toFixed(2) : 0;
-
-        assigneeProgressHTML += `
-            <div class="assignee-progress">
-                <h4>${assignee}</h4>
-                <div class="progress-bar" style="width: ${completionRate}%">${completionRate}%</div>
-            </div>
-        `;
-    });
-
-    assigneeProgress.innerHTML = assigneeProgressHTML;
-}
-
-function updateTodoList(projectId, filteredTodos = todos[projectId] || []) {
-    const todoListElement = document.getElementById('todo-list');
-    todoListElement.innerHTML = `
-        <table>
-            <thead>
-                <tr>
-                    <th>완료</th>
-                    <th>내용</th>
-                    <th>담당자</th>
-                    <th>우선순위</th>
-                    <th>마감일</th>
-                    <th>작업</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-    `;
-    const tableBody = todoListElement.querySelector('tbody');
-
-    filteredTodos.forEach(todo => {
-        const todoRow = createTodoRow(todo, projectId);
-        tableBody.appendChild(todoRow);
-    });
-}
-
-function createTodoRow(todo, projectId) {
-    const row = document.createElement('tr');
-    row.className = 'todo-item';
-    row.id = `todo-${todo.id}`;
-    row.innerHTML = `
-        <td><input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''} onchange="updateTodoStatus('${todo.id}', this.checked)"></td>
-        <td><span class="todo-text">${todo.text}</span></td>
-        <td>
-            <select class="todo-assignee" onchange="updateTodoAssignee('${todo.id}', this.value)">
-                ${getAssigneeOptions(projectId, todo.assignee)}
-            </select>
-        </td>
-        <td>
-            <select class="todo-priority" onchange="updateTodoPriority('${todo.id}', this.value)">
-                <option value="low" ${todo.priority === 'low' ? 'selected' : ''}>낮음</option>
-                <option value="medium" ${todo.priority === 'medium' ? 'selected' : ''}>중간</option>
-                <option value="high" ${todo.priority === 'high' ? 'selected' : ''}>높음</option>
-            </select>
-        </td>
-        <td><input type="date" class="todo-due-date" value="${todo.dueDate || ''}" onchange="updateTodoDueDate('${todo.id}', this.value)"></td>
-        <td><button onclick="deleteTodo('${todo.id}')">삭제</button></td>
-    `;
-    return row;
-}
-
-function updatePriorityTodoList(projectId) {
-    const priorityTodoListElement = document.getElementById('priority-todo-list');
-    priorityTodoListElement.innerHTML = `
-        <table>
-            <thead>
-                <tr>
-                    <th>완료</th>
-                    <th>내용</th>
-                    <th>담당자</th>
-                    <th>우선순위</th>
-                    <th>마감일</th>
-                    <th>작업</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-    `;
-    const tableBody = priorityTodoListElement.querySelector('tbody');
-
-    const projectTodos = todos[projectId] || [];
-    const priorityTodos = getPriorityTodos(projectTodos);
-    
-    priorityTodos.forEach(todo => {
-        const todoRow = createTodoRow(todo, projectId);
-        tableBody.appendChild(todoRow);
-    });
-}
-
-function getPriorityTodos(todos) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    return todos.filter(todo => {
-        if (todo.completed) return false;
-
-        const dueDate = new Date(todo.dueDate);
-        const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-
-        return (todo.priority === 'high') ||
-               (todo.priority === 'medium' && daysUntilDue <= 3) ||
-               (daysUntilDue <= 1);
-    }).sort((a, b) => {
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
-        const dateA = new Date(a.dueDate);
-        const dateB = new Date(b.dueDate);
-
-        if (priorityOrder[b.priority] !== priorityOrder[a.priority]) {
-            return priorityOrder[b.priority] - priorityOrder[a.priority];
-        }
-        return dateA - dateB;
-    });
-}
-
-function addTodo(projectId) {
-    const todoText = document.getElementById('new-todo-text').value.trim();
-    const assignee = document.getElementById('new-todo-assignee').value;
-    const priority = document.getElementById('new-todo-priority').value;
-    const dueDate = document.getElementById('new-todo-due-date').value;
-    if (todoText) {
-        socket.send(JSON.stringify({ 
-            type: 'ADD_TODO', 
-            projectId: projectId, 
-            text: todoText, 
-            assignee: assignee,
-            priority: priority,
-            dueDate: dueDate
-        }));
-        // 입력 필드 초기화
-        document.getElementById('new-todo-text').value = '';
-        document.getElementById('new-todo-assignee').value = '';
-        document.getElementById('new-todo-priority').value = 'low';
-        document.getElementById('new-todo-due-date').value = '';
-    }
-}
-
-function updateTodoStatus(todoId, completed) {
-    const todoElement = document.getElementById(`todo-${todoId}`);
-    if (!todoElement) {
-        console.error(`Todo element with id ${todoId} not found`);
-        return;
-    }
-
-    const projectId = getCurrentProjectId();
-    if (!projectId) {
-        console.error('Current project ID not found');
-        return;
-    }
-
-    const todoText = todoElement.querySelector('.todo-text').textContent;
-    const assignee = todoElement.querySelector('.todo-assignee').value;
-    const priority = todoElement.querySelector('.todo-priority').value;
-    const dueDate = todoElement.querySelector('.todo-due-date').value;
-    const completedDate = completed ? new Date().toISOString() : null;
-    
-    updateTodo(projectId, { 
-        id: todoId, 
-        text: todoText, 
-        completed: completed, 
-        assignee: assignee, 
-        priority: priority, 
-        dueDate: dueDate,
-        completedDate: completedDate 
-    });
-}
-
-function updateTodoPriority(todoId, newPriority) {
-    const todoElement = document.getElementById(`todo-${todoId}`);
-    if (!todoElement) {
-        console.error(`Todo element with id ${todoId} not found`);
-        return;
-    }
-
-    const projectId = getCurrentProjectId();
-    if (!projectId) {
-        console.error('Current project ID not found');
-        return;
-    }
-
-    const todoText = todoElement.querySelector('.todo-text').textContent;
-    const completed = todoElement.querySelector('.todo-checkbox').checked;
-    const assignee = todoElement.querySelector('.todo-assignee').value;
-    const dueDate = todoElement.querySelector('.todo-due-date').value;
-    
-    updateTodo(projectId, { id: todoId, text: todoText, completed: completed, assignee: assignee, priority: newPriority, dueDate: dueDate });
-}
-
-function updateTodoDueDate(todoId, newDueDate) {
-    const todoElement = document.getElementById(`todo-${todoId}`);
-    if (!todoElement) {
-        console.error(`Todo element with id ${todoId} not found`);
-        return;
-    }
-
-    const projectId = getCurrentProjectId();
-    if (!projectId) {
-        console.error('Current project ID not found');
-        return;
-    }
-
-    const todoText = todoElement.querySelector('.todo-text').textContent;
-    const completed = todoElement.querySelector('.todo-checkbox').checked;
-    const assignee = todoElement.querySelector('.todo-assignee').value;
-    const priority = todoElement.querySelector('.todo-priority').value;
-    
-    updateTodo(projectId, { id: todoId, text: todoText, completed: completed, assignee: assignee, priority: priority, dueDate: newDueDate });
-}
-
-function getCurrentProjectId() {
-    const projectDetailsTitle = document.getElementById('project-details-title');
-    return projectDetailsTitle ? projectDetailsTitle.dataset.projectId : null;
-}
-
-function addNewAssignee(projectId) {
-    const newAssigneeName = document.getElementById('new-assignee-name').value.trim();
-    if (newAssigneeName) {
-        socket.send(JSON.stringify({
-            type: 'ADD_ASSIGNEE',
-            projectId: projectId,
-            assigneeName: newAssigneeName
-        }));
-        document.getElementById('new-assignee-name').value = '';
-    }
-}
-
-function deleteAssignee(projectId, assigneeName) {
-    if (confirm(`정말로 ${assigneeName}을(를) 삭제하시겠습니까?`)) {
-        socket.send(JSON.stringify({
-            type: 'DELETE_ASSIGNEE',
-            projectId: projectId,
-            assigneeName: assigneeName
-        }));
-    }
-}
-
-function updateAssigneeList(projectId) {
-    const assigneeList = document.getElementById('assignee-list');
-    if (!assigneeList) return; // assignee-list가 없으면 함수를 종료합니다.
-    
-    const assignees = getAssignees(projectId);
-    
-    let assigneeListHTML = '';
-    assignees.forEach(assignee => {
-        assigneeListHTML += `
-            <li>
-                ${assignee}
-                <button onclick="deleteAssignee('${projectId}', '${assignee}')">삭제</button>
-            </li>
-        `;
-    });
-    
-    assigneeList.innerHTML = assigneeListHTML;
-    
-    // 모든 할 일 항목의 담당자 선택 옵션 업데이트
+    // 담당자 옵션 업데이트
     updateAllTodoAssigneeOptions(projectId);
 }
 
-function updateAllTodoAssigneeOptions(projectId) {
-    const todoItems = document.querySelectorAll('.todo-item');
-    todoItems.forEach(todoItem => {
-        const assigneeSelect = todoItem.querySelector('.todo-assignee');
-        const currentAssignee = assigneeSelect.value;
-        assigneeSelect.innerHTML = getAssigneeOptions(projectId, currentAssignee);
-    });
-    
-    // 새 할 일 추가 폼의 담당자 선택 옵션도 업데이트
-    const newTodoAssigneeSelect = document.getElementById('new-todo-assignee');
-    if (newTodoAssigneeSelect) {
-        newTodoAssigneeSelect.innerHTML = getAssigneeOptions(projectId);
-    }
-}
-
-function deleteTodo(todoId) {
-    const projectId = getCurrentProjectId();
-    if (projectId) {
-        if (confirm('정말로 이 할 일을 삭제하시겠습니까?')) {
-            socket.send(JSON.stringify({
-                type: 'DELETE_TODO',
-                projectId: projectId,
-                todoId: todoId
-            }));
-        }
-    } else {
-        console.error('현재 프로젝트 ID를 찾을 수 없습니다.');
-    }
-}
-
-function editTodo(todoId) {
-    const todoElement = document.getElementById(`todo-${todoId}`);
-    const todoTextElement = todoElement.querySelector('.todo-text');
-    const newText = prompt('할 일을 수정하세요:', todoTextElement.textContent);
-    if (newText && newText.trim() !== '') {
-        const projectId = getCurrentProjectId();
-        const updatedTodo = {
-            id: todoId,
-            text: newText.trim(),
-            completed: todoElement.querySelector('.todo-checkbox').checked,
-            assignee: todoElement.querySelector('.todo-assignee').value,
-            priority: todoElement.querySelector('.todo-priority').value,
-            dueDate: todoElement.querySelector('.todo-due-date').value
-        };
-        updateTodo(projectId, updatedTodo);
-    }
-}
-
-function filterAndSortTodos(projectId) {
-    const filterPriority = document.getElementById('filter-priority').value;
-    const filterAssignee = document.getElementById('filter-assignee').value;
-    const sortBy = document.getElementById('sort-by').value;
-
-    let filteredTodos = todos[projectId] || [];
-
-    // 필터링
-    if (filterPriority !== 'all') {
-        filteredTodos = filteredTodos.filter(todo => todo.priority === filterPriority);
-    }
-    if (filterAssignee !== 'all') {
-        filteredTodos = filteredTodos.filter(todo => todo.assignee === filterAssignee);
-    }
-
-    // 정렬
-    filteredTodos.sort((a, b) => {
-        switch (sortBy) {
-            case 'priority':
-                return b.priority.localeCompare(a.priority);
-            case 'dueDate':
-                return new Date(a.dueDate) - new Date(b.dueDate);
-            case 'assignee':
-                return a.assignee.localeCompare(b.assignee);
-            default:
-                return 0;
-        }
-    });
-
-    updateTodoList(projectId, filteredTodos);
-}
-
-function showProjectStatistics(projectId) {
-    const project = projects.find(p => p.id === projectId);
-    const projectTodos = todos[projectId] || [];
-    const totalTodos = projectTodos.length;
-    const completedTodos = projectTodos.filter(todo => todo.completed).length;
-    const completionRate = totalTodos > 0 ? (completedTodos / totalTodos * 100).toFixed(2) : 0;
-
-    const statistics = `
-        <h3>프로젝트 통계</h3>
-        <p>전체 할 일: ${totalTodos}</p>
-        <p>완료된 할 일: ${completedTodos}</p>
-        <p>완료율: ${completionRate}%</p>
+function createTodoTable(todos, projectId) {
+    const table = document.createElement('table');
+    table.className = 'todo-table';
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>완료</th>
+                <th>내용</th>
+                <th>담당자</th>
+                <th>우선순위</th>
+                <th>마감일</th>
+                <th>작업</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
     `;
+    const tableBody = table.querySelector('tbody');
 
-    const statisticsElement = document.getElementById('project-statistics');
-    statisticsElement.innerHTML = statistics;
+    todos.forEach(todo => {
+        const todoRow = createTodoRow(todo, projectId);
+        tableBody.appendChild(todoRow);
+    });
+
+    return table;
 }
 
-// 새로운 함수: updateAssigneeProgress
+function createTodoRow(todo, projectId) {
+    const row = document.createElement('tr');
+    row.className = 'todo-item';
+    row.id = `todo-${todo.id}`;
+    row.innerHTML = `
+        <td><input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''} onchange="updateTodoStatus('${todo.id}', this.checked)"></td>
+        <td><span class="todo-text">${todo.text}</span></td>
+        <td>
+            <select class="todo-assignee" onchange="updateTodoAssignee('${todo.id}', this.value)">
+                ${getAssigneeOptions(projectId, todo.assignee)}
+            </select>
+        </td>
+        <td>
+            <select class="todo-priority" onchange="updateTodoPriority('${todo.id}', this.value)">
+                <option value="low" ${todo.priority === 'low' ? 'selected' : ''}>낮음</option>
+                <option value="medium" ${todo.priority === 'medium' ? 'selected' : ''}>중간</option>
+                <option value="high" ${todo.priority === 'high' ? 'selected' : ''}>높음</option>
+            </select>
+        </td>
+        <td><input type="date" class="todo-due-date" value="${todo.dueDate || ''}" onchange="updateTodoDueDate('${todo.id}', this.value)"></td>
+        <td>
+            <button onclick="editTodo('${todo.id}')">수정</button>
+            <button onclick="deleteTodo('${todo.id}')">삭제</button>
+        </td>
+    `;
+    return row;
+}
+
+function getPriorityTodos(todos, projectId) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return todos.filter(todo => {
+        if (todo.completed) return false;
+
+        const dueDate = todo.dueDate ? new Date(todo.dueDate) : null;
+        const daysUntilDue = dueDate ? Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24)) : Infinity;
+
+        return (todo.priority === 'high') ||
+               (todo.priority === 'medium' && daysUntilDue <= 3) ||
+               (daysUntilDue <= 1);
+    }).sort((a, b) => {
+        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
+    });
+}
+
 function updateAssigneeProgress(projectId) {
     const assigneeProgressElement = document.getElementById('assignee-progress');
     if (!assigneeProgressElement) return;
@@ -1185,6 +672,27 @@ function updateAssigneeProgress(projectId) {
     });
 
     assigneeProgressElement.innerHTML = progressHTML;
+}
+
+function addTodo(projectId) {
+    const todoText = document.getElementById('new-todo-text').value.trim();
+    const assignee = document.getElementById('new-todo-assignee').value;
+    const priority = document.getElementById('new-todo-priority').value || 'low';
+    const dueDate = document.getElementById('new-todo-due-date').value;
+    if (todoText) {
+        socket.send(JSON.stringify({ 
+            type: 'ADD_TODO', 
+            projectId: projectId, 
+            text: todoText, 
+            assignee: assignee,
+            priority: priority,
+            dueDate: dueDate
+        }));
+        document.getElementById('new-todo-text').value = '';
+        document.getElementById('new-todo-assignee').value = '';
+        document.getElementById('new-todo-priority').value = 'low';
+        document.getElementById('new-todo-due-date').value = '';
+    }
 }
 
 window.addEventListener('load', () => {
