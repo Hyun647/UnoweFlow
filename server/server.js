@@ -50,7 +50,17 @@ wss.on('connection', (ws) => {
                 addTodo(data.projectId, data.text, data.assignee, data.priority, data.dueDate);
                 break;
             case 'UPDATE_TODO':
-                updateTodo(data.projectId, updatedTodo);
+                const updatedTodo = data.todo;  // 이 줄을 추가합니다.
+                if (updatedTodo && updatedTodo.id) {
+                    updateTodo(data.projectId, updatedTodo);
+                    broadcastToAll(JSON.stringify({
+                        type: 'TODO_UPDATED',
+                        projectId: data.projectId,
+                        todo: updatedTodo
+                    }));
+                } else {
+                    console.error('Invalid todo data received:', data);
+                }
                 break;
             case 'DELETE_TODO':
                 deleteTodo(data.projectId, data.todoId);
