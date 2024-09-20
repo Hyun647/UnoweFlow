@@ -237,17 +237,21 @@ button.delete-btn:hover {
 
 #todo-input {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 20px;
 }
 
 #todo-input input,
-#todo-input select {
-    flex: 1;
+#todo-input select,
+#todo-input button {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 #todo-search {
     width: 100%;
+    box-sizing: border-box;
     margin-bottom: 20px;
 }
 
@@ -407,6 +411,17 @@ button.delete-btn:hover {
 
     .project-buttons button {
         margin-top: 0.5rem;
+        width: 100%;
+    }
+
+    #todo-input {
+        flex-direction: column;
+    }
+
+    #todo-input input,
+    #todo-input select,
+    #todo-input button,
+    #todo-search {
         width: 100%;
     }
 }
