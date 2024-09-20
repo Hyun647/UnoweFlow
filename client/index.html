@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>프로젝트 관리 시스템</title>
+    <title>UnoweFlow</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <header>
-        <h1>프로젝트 관리 시스템</h1>
+        <div class="header-content">
+            <img src="img/unowelogo.jpeg" alt="UnoweFlow Logo" class="logo">
+            <h1>UnoweFlow</h1>
+        </div>
     </header>
     <main id="main-content">
         <section id="project-list-section">
@@ -17,6 +20,7 @@
                 <input type="text" id="project-input" placeholder="새 프로젝트 이름">
                 <button id="add-project-btn">프로젝트 추가</button>
             </div>
+            <input type="text" id="project-search" placeholder="프로젝트 검색" onkeyup="searchProjects()">
             <div id="project-list"></div>
         </section>
         <section id="project-details-section" style="display: none;">
@@ -25,10 +29,35 @@
             <div id="todo-input">
                 <input type="text" id="new-todo-text" placeholder="새 할 일">
                 <select id="new-todo-assignee"></select>
+                <select id="new-todo-priority">
+                    <option value="low">낮음</option>
+                    <option value="medium">중간</option>
+                    <option value="high">높음</option>
+                </select>
+                <input type="date" id="new-todo-due-date">
                 <button id="add-todo-btn">할 일 추가</button>
             </div>
             <button id="manage-assignees-btn">담당자 관리</button>
-            <ul id="todo-list"></ul>
+            <div id="todo-filters">
+                <select id="filter-priority">
+                    <option value="all">모든 우선순위</option>
+                    <option value="high">높음</option>
+                    <option value="medium">중간</option>
+                    <option value="low">낮음</option>
+                </select>
+                <select id="filter-assignee"></select>
+                <select id="sort-by">
+                    <option value="priority">우선순위순</option>
+                    <option value="dueDate">마감일순</option>
+                    <option value="assignee">담당자순</option>
+                </select>
+            </div>
+            <input type="text" id="todo-search" placeholder="할 일 검색">
+            <h3>우선 처리할 일</h3>
+            <div id="priority-todo-list"></div>
+            <h3>전체 할 일 목록</h3>
+            <div id="todo-list"></div>
+            <div id="project-statistics"></div>
             <button id="back-to-list-btn">프로젝트 목록으로 돌아가기</button>
         </section>
     </main>

@@ -103,7 +103,7 @@ function handleWebSocketMessage(data) {
             break;
         case 'PROJECTS_LIST':
             if (Array.isArray(data.projects)) {
-                projects = data.projects;
+                projects = data.projects.filter(project => project && typeof project.name === 'string');
                 updateProjectList();
             } else {
                 console.error('Invalid projects list received:', data);
@@ -115,7 +115,7 @@ function handleWebSocketMessage(data) {
 function showProjectList() {
     const mainContent = document.getElementById('main-content');
     mainContent.innerHTML = `
-        <h2>프트 목록</h2>
+        <h2>프로젝트 목록</h2>
         <div id="project-form">
             <input type="text" id="project-input" placeholder="새 프로젝트 이름">
             <button id="add-project-btn">프로젝트 추가</button>
@@ -131,8 +131,10 @@ function updateProjectList(filteredProjects = projects) {
     const projectList = document.getElementById('project-list');
     projectList.innerHTML = '';
     filteredProjects.forEach(project => {
-        const projectElement = createProjectElement(project);
-        projectList.appendChild(projectElement);
+        if (project && typeof project.name === 'string') {
+            const projectElement = createProjectElement(project);
+            projectList.appendChild(projectElement);
+        }
     });
 }
 
@@ -197,7 +199,7 @@ function showProjectDetails(projectId) {
             <button onclick="addTodo('${projectId}')">할 일 추가</button>
         </div>
         <button onclick="showManageAssigneesModal('${projectId}')">담당자 관리</button>
-        <input type="text" id="todo-search" placeholder="할 일 검색" onkeyup="searchTodos('${projectId}')">
+        <input type="text" id="todo-search" placeholder="할 일 검색">
         <h3>우선 처리할 일</h3>
         <div id="priority-todo-list"></div>
         <h3>전체 할 일 목록</h3>
@@ -209,14 +211,26 @@ function showProjectDetails(projectId) {
     updateAssigneeProgress(projectId);
     filterAndSortTodos(projectId);
     showProjectStatistics(projectId);
+
+    // 할 일 검색 이벤트 리스너 추가
+    document.getElementById('todo-search').addEventListener('input', () => searchTodos(projectId));
 }
 
 function addProject() {
     const projectInput = document.getElementById('project-input');
     const projectName = projectInput.value.trim();
     if (projectName) {
-        socket.send(JSON.stringify({ type: 'ADD_PROJECT', name: projectName }));
-        projectInput.value = '';
+        console.log('프로젝트 추가 요청:', projectName);  // 디버깅을 위한 로그
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: 'ADD_PROJECT', name: projectName }));
+            projectInput.value = '';
+        } else {
+            console.error('WebSocket 연결이 열려있지 않습니다.');
+            alert('서버와의 연결이 끊어졌습니다. 페이지를 새로고침해주세요.');
+        }
+    } else {
+        console.log('프로젝트 이름이 비어있습니다.');  // 디버깅을 위한 로그
+        alert('프로젝트 이름을 입력해주세요.');
     }
 }
 
@@ -589,8 +603,15 @@ function filterAndSortTodos(projectId) {
     const filterPriority = document.getElementById('filter-priority').value;
     const filterAssignee = document.getElementById('filter-assignee').value;
     const sortBy = document.getElementById('sort-by').value;
+    const searchTerm = document.getElementById('todo-search').value.toLowerCase();
 
     let filteredTodos = todos[projectId] || [];
+
+    // 검색어 필터링
+    filteredTodos = filteredTodos.filter(todo => 
+        todo.text.toLowerCase().includes(searchTerm) ||
+        (todo.assignee && todo.assignee.toLowerCase().includes(searchTerm))
+    );
 
     // 우선순위 필터링
     if (filterPriority !== 'all') {
@@ -678,7 +699,47 @@ function requestProjectList() {
     socket.send(JSON.stringify({ type: 'GET_PROJECTS' }));
 }
 
+function searchProjects() {
+    const searchInput = document.getElementById('project-search');
+    const searchTerm = searchInput.value.toLowerCase();
+    const filteredProjects = projects.filter(project => {
+        // 프로젝트 객체와 name 속성의 유효성 검사
+        if (project && typeof project.name === 'string') {
+            return project.name.toLowerCase().includes(searchTerm);
+        }
+        return false; // 유효하지 않은 프로젝트는 필터링에서 제외
+    });
+    updateProjectList(filteredProjects);
+}
+
+function searchTodos(projectId) {
+    const searchInput = document.getElementById('todo-search');
+    const searchTerm = searchInput.value.toLowerCase();
+    const projectTodos = todos[projectId] || [];
+    
+    const filteredTodos = projectTodos.filter(todo => 
+        todo.text.toLowerCase().includes(searchTerm) ||
+        (todo.assignee && todo.assignee.toLowerCase().includes(searchTerm))
+    );
+
+    updateTodoList(projectId, filteredTodos);
+}
+
+// WebSocket 연결 상태 확인 함수 추가
+function checkWebSocketConnection() {
+    if (socket.readyState === WebSocket.OPEN) {
+        console.log('WebSocket 연결 상태: 열림');
+    } else {
+        console.log('WebSocket 연결 상태: 닫힘');
+        initializeWebSocket();  // 연결이 닫혀있으면 재연결 시도
+    }
+}
+
+// 주기적으로 WebSocket 연결 상태 확인
+setInterval(checkWebSocketConnection, 5000);  // 5초마다 연결 상태 확인
+
 window.addEventListener('load', () => {
     console.log('페이지 로드됨');
     initializeWebSocket();
+    showProjectList();  // 이 줄을 추가
 });

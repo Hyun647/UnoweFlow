@@ -89,7 +89,7 @@ function addProject(name) {
     projects.push(newProject);
     todos[newProject.id] = [];
     projectAssignees[newProject.id] = [];
-    broadcastToAll({ type: 'PROJECT_ADDED', project: newProject });
+    broadcastToAll(JSON.stringify({ type: 'PROJECT_ADDED', project: newProject }));
 }
 
 function updateProject(project) {
