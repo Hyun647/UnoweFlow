@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프로젝트 관리 시스템</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>프로젝트 관리 시스템</h1>
+    </header>
+    <main id="main-content">
+        <section id="project-list-section">
+            <h2>프로젝트 목록</h2>
+            <div id="project-form">
+                <input type="text" id="project-input" placeholder="새 프로젝트 이름">
+                <button id="add-project-btn">프로젝트 추가</button>
+            </div>
+            <div id="project-list"></div>
+        </section>
+        <section id="project-details-section" style="display: none;">
+            <h2 id="project-details-title"></h2>
+            <div id="assignee-progress"></div>
+            <div id="todo-input">
+                <input type="text" id="new-todo-text" placeholder="새 할 일">
+                <select id="new-todo-assignee"></select>
+                <button id="add-todo-btn">할 일 추가</button>
+            </div>
+            <button id="manage-assignees-btn">담당자 관리</button>
+            <ul id="todo-list"></ul>
+            <button id="back-to-list-btn">프로젝트 목록으로 돌아가기</button>
+        </section>
+    </main>
+    <script src="client.js"></script>
+</body>
+</html>
