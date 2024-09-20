@@ -9,13 +9,24 @@ function initializeWebSocket() {
 
     socket.onopen = () => {
         console.log('WebSocket 연결이 열렸습니다.');
-        requestProjectList(); // 프로젝트 목록 요청
+        requestFullStateUpdate();
     };
 
     socket.onmessage = (event) => {
         console.log('WebSocket 메시지 수신:', event.data);
         const data = JSON.parse(event.data);
         handleWebSocketMessage(data);
+        
+        // FULL_STATE_UPDATE 메시지를 받았을 때 UI 업데이트
+        if (data.type === 'FULL_STATE_UPDATE') {
+            updateProjectList();
+            const currentProjectId = getCurrentProjectId();
+            if (currentProjectId) {
+                filterAndSortTodos(currentProjectId);
+                updateAssigneeProgress(currentProjectId);
+                showProjectStatistics(currentProjectId);
+            }
+        }
     };
 
     socket.onclose = (event) => {
@@ -28,7 +39,12 @@ function initializeWebSocket() {
     };
 }
 
+function requestFullStateUpdate() {
+    socket.send(JSON.stringify({ type: 'REQUEST_FULL_STATE' }));
+}
+
 function handleWebSocketMessage(data) {
+    console.log('WebSocket 메시지 수신:', data);  // 디버깅을 위한 로그
     switch (data.type) {
         case 'FULL_STATE_UPDATE':
             projects = data.projects;
@@ -45,10 +61,13 @@ function handleWebSocketMessage(data) {
             }
             break;
         case 'PROJECT_UPDATED':
-            const projectIndex = projects.findIndex(p => p.id === data.project.id);
+            const updatedProject = data.project;
+            const projectIndex = projects.findIndex(p => p.id === updatedProject.id);
             if (projectIndex !== -1) {
-                projects[projectIndex] = data.project;
-                updateProjectInUI(data.project);
+                projects[projectIndex] = updatedProject;
+                updateProjectInUI(updatedProject);
+            } else {
+                console.error('Updated project not found:', updatedProject);
             }
             break;
         case 'PROJECT_DELETED':
@@ -58,6 +77,7 @@ function handleWebSocketMessage(data) {
         case 'TODO_ADDED':
         case 'TODO_UPDATED':
         case 'TODO_DELETED':
+            // 할 일 관련 변경사항이 있을 때 해당 프로젝트의 할 일 목록 새로고침
             if (!todos[data.projectId]) {
                 todos[data.projectId] = [];
             }
@@ -79,36 +99,16 @@ function handleWebSocketMessage(data) {
                 updateAssigneeProgress(data.projectId);
                 showProjectStatistics(data.projectId);
             }
+            // 프로젝트 목록 페이지에서도 진행률 업데이트
+            updateProjectList();
             break;
         case 'ASSIGNEE_ADDED':
-            if (!projectAssignees[data.projectId]) {
-                projectAssignees[data.projectId] = [];
-            }
-            if (!projectAssignees[data.projectId].includes(data.assigneeName)) {
-                projectAssignees[data.projectId].push(data.assigneeName);
-            }
-            updateAllTodoAssigneeOptions(data.projectId);
-            updateAssigneeListInModal(data.projectId);
-            // 현재 프로젝트의 할 일 목록을 업데이트
-            const currentProjectIdForAssignee = getCurrentProjectId();
-            if (currentProjectIdForAssignee === data.projectId) {
-                filterAndSortTodos(data.projectId);
-            }
-            break;
         case 'ASSIGNEE_DELETED':
-            projectAssignees[data.projectId] = projectAssignees[data.projectId].filter(
-                assignee => assignee !== data.assigneeName
-            );
-            updateAssigneeListInModal(data.projectId);
+            // 담당자 관련 변경사항이 있을 때 전체 상태 새로고침
+            requestFullStateUpdate();
             break;
-        case 'PROJECTS_LIST':
-            if (Array.isArray(data.projects)) {
-                projects = data.projects.filter(project => project && typeof project.name === 'string');
-                updateProjectList();
-            } else {
-                console.error('Invalid projects list received:', data);
-            }
-            break;
+        default:
+            console.log('알 수 없는 메시지 타입:', data.type);
     }
 }
 
@@ -128,14 +128,17 @@ function showProjectList() {
 }
 
 function updateProjectList(filteredProjects = projects) {
+    console.log('프로젝트 리스트 업데이트:', filteredProjects);  // 디버깅을 위한 로그
     const projectList = document.getElementById('project-list');
-    projectList.innerHTML = '';
-    filteredProjects.forEach(project => {
-        if (project && typeof project.name === 'string') {
-            const projectElement = createProjectElement(project);
-            projectList.appendChild(projectElement);
-        }
-    });
+    if (projectList) {
+        projectList.innerHTML = '';
+        filteredProjects.forEach(project => {
+            if (project && typeof project.name === 'string') {
+                const projectElement = createProjectElement(project);
+                projectList.appendChild(projectElement);
+            }
+        });
+    }
 }
 
 function createProjectElement(project) {
@@ -145,8 +148,9 @@ function createProjectElement(project) {
     const progress = project.progress || 0;
     projectElement.innerHTML = `
         <h3 class="project-name">${project.name || '이름 없음'}</h3>
-        <div class="progress-circle" data-progress="${progress}">
-            <div class="progress-circle-value">${progress}%</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: ${progress}%"></div>
+            <span class="progress-text">${progress}%</span>
         </div>
         <div class="project-buttons">
             <button onclick="showProjectDetails('${project.id}')">보기</button>
@@ -198,7 +202,7 @@ function showProjectDetails(projectId) {
             <input type="date" id="new-todo-due-date">
             <button onclick="addTodo('${projectId}')">할 일 추가</button>
         </div>
-        <button onclick="showManageAssigneesModal('${projectId}')">담당자 관리</button>
+        <button onclick="showManageAssigneesModal('${projectId}')">담당 관리</button>
         <input type="text" id="todo-search" placeholder="할 일 검색">
         <h3>우선 처리할 일</h3>
         <div id="priority-todo-list"></div>
@@ -246,25 +250,70 @@ function renameProject(projectId) {
     const currentName = projectNameElement.textContent;
     const newName = prompt('새로운 프로젝트 이름을 입력하세요:', currentName);
     if (newName && newName.trim() !== '' && newName !== currentName) {
+        const updatedProject = { id: projectId, name: newName.trim() };
         socket.send(JSON.stringify({
             type: 'UPDATE_PROJECT',
-            project: { id: projectId, name: newName.trim() }
+            project: updatedProject
         }));
     }
 }
 
 function updateProjectInUI(project) {
+    console.log('프로젝트 UI 업데이트:', project);  // 디버깅을 위한 로그
+    
+    // 프로젝트 목록에서 프로젝트 업데이트
+    const projectIndex = projects.findIndex(p => p.id === project.id);
+    if (projectIndex !== -1) {
+        projects[projectIndex] = {...projects[projectIndex], ...project};
+    } else {
+        projects.push(project);
+    }
+
+    // 프로젝트 요소 업데이트
     const projectElement = document.getElementById(`project-${project.id}`);
     if (projectElement) {
-        projectElement.querySelector('.project-name').textContent = project.name || '이름 없음';
-        const progressCircle = projectElement.querySelector('.progress-circle');
-        const progressValue = projectElement.querySelector('.progress-circle-value');
-        if (progressCircle && progressValue) {
+        const projectNameElement = projectElement.querySelector('.project-name');
+        if (projectNameElement) {
+            projectNameElement.textContent = project.name || '이름 없음';
+        }
+        const progressBar = projectElement.querySelector('.progress-bar');
+        const progressText = projectElement.querySelector('.progress-text');
+        if (progressBar && progressText) {
             const progress = project.progress || 0;
-            progressCircle.dataset.progress = progress;
-            progressValue.textContent = `${progress}%`;
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `${progress}%`;
+        }
+    } else {
+        // 프로젝트 요소가 없으면 전체 리스트를 업데이트
+        updateProjectList();
+    }
+
+    // 현재 보고 있는 프로젝트 상세 페이지 업데이트
+    const currentProjectId = getCurrentProjectId();
+    if (currentProjectId === project.id) {
+        updateProjectDetailsView(project);
+    }
+
+    // 프로젝트 목록 페이지에 있을 경우 해당 프로젝트 요소만 업데이트
+    const projectListElement = document.getElementById('project-list');
+    if (projectListElement) {
+        const existingProjectElement = projectListElement.querySelector(`#project-${project.id}`);
+        if (existingProjectElement) {
+            const updatedProjectElement = createProjectElement(project);
+            existingProjectElement.replaceWith(updatedProjectElement);
+        } else {
+            const newProjectElement = createProjectElement(project);
+            projectListElement.appendChild(newProjectElement);
         }
     }
+}
+
+function updateProjectDetailsView(project) {
+    const projectDetailsTitle = document.getElementById('project-details-title');
+    if (projectDetailsTitle) {
+        projectDetailsTitle.textContent = `${project.name || '이름 없음'} 상세`;
+    }
+    // 필요한 경우 프로젝트 상세 페이지의 다른 요소들도 여기서 업데이트
 }
 
 function removeProjectFromUI(projectId) {

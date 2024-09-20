@@ -41,15 +41,7 @@ wss.on('connection', (ws) => {
                 addProject(data.name);
                 break;
             case 'UPDATE_PROJECT':
-                const projectToUpdate = projects.find(p => p.id === data.project.id);
-                if (projectToUpdate) {
-                    projectToUpdate.name = data.project.name || projectToUpdate.name;
-                    projectToUpdate.progress = data.project.progress !== undefined ? data.project.progress : projectToUpdate.progress;
-                    broadcastToAll(JSON.stringify({
-                        type: 'PROJECT_UPDATED',
-                        project: projectToUpdate
-                    }));
-                }
+                updateProject(data.project);
                 break;
             case 'DELETE_PROJECT':
                 deleteProject(data.projectId);
@@ -90,13 +82,15 @@ function addProject(name) {
     todos[newProject.id] = [];
     projectAssignees[newProject.id] = [];
     broadcastToAll(JSON.stringify({ type: 'PROJECT_ADDED', project: newProject }));
+    console.log('프로젝트 추가됨:', newProject);  // 디버깅을 위한 로그
 }
 
 function updateProject(project) {
     const index = projects.findIndex(p => p.id === project.id);
     if (index !== -1) {
-        projects[index] = project;
-        broadcastToAll({ type: 'PROJECT_UPDATED', project: project });
+        projects[index] = {...projects[index], ...project};
+        broadcastToAll({ type: 'PROJECT_UPDATED', project: projects[index] });
+        console.log('프로젝트 업데이트됨:', projects[index]);  // 디버깅을 위한 로그
     }
 }
 
@@ -149,12 +143,14 @@ function updateProjectProgress(projectId) {
     }
 }
 
-function broadcastToAll(data) {
-    wss.clients.forEach((client) => {
+function broadcastToAll(message) {
+    const messageString = JSON.stringify(message);
+    wss.clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(data));
+            client.send(messageString);
         }
     });
+    console.log('브로드캐스트 메시지:', messageString);  // 디버깅을 위한 로그
 }
 
 function addAssignee(projectId, assigneeName) {
