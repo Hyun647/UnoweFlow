@@ -105,7 +105,9 @@ function updateAssigneeProgress(projectId) {
         progressHTML += `
             <div class="assignee-progress">
                 <span>${assignee}: ${progress}% (${completedTodos}/${totalTodos})</span>
-                <div class="progress-bar" style="width: ${progress}%"></div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: ${progress}%"></div>
+                </div>
             </div>
         `;
     });
@@ -122,6 +124,10 @@ function showProjectStatistics(projectId) {
 
     const statistics = `
         <h3>프로젝트 통계</h3>
+        <div class="project-progress-bar-container">
+            <div class="project-progress-bar" style="width: ${completionRate}%"></div>
+            <span class="project-progress-text">${completionRate}%</span>
+        </div>
         <p>전체 할 일: ${totalTodos}</p>
         <p>완료된 할 일: ${completedTodos}</p>
         <p>완료율: ${completionRate}%</p>
@@ -151,15 +157,27 @@ function updateTodoList(projectId, filteredTodos) {
     const todoListElement = document.getElementById('todo-list');
     const priorityTodoListElement = document.getElementById('priority-todo-list');
     
+    if (!todoListElement || !priorityTodoListElement) {
+        console.error('Todo list elements not found');
+        return;
+    }
+
     todoListElement.innerHTML = '';
     priorityTodoListElement.innerHTML = '';
 
+    const priorityTodos = getPriorityTodos(filteredTodos);
+    
+    console.log('우선 처리할 일:', priorityTodos); // 디버깅을 위한 로그
+
+    if (priorityTodos.length > 0) {
+        const priorityTable = createTodoTable(priorityTodos, projectId);
+        priorityTodoListElement.appendChild(priorityTable);
+    } else {
+        priorityTodoListElement.innerHTML = '<p>우선 처리할 일이 없습니다.</p>';
+    }
+
     const table = createTodoTable(filteredTodos, projectId);
     todoListElement.appendChild(table);
-
-    const priorityTodos = getPriorityTodos(filteredTodos);
-    const priorityTable = createTodoTable(priorityTodos, projectId);
-    priorityTodoListElement.appendChild(priorityTable);
 }
 
 function createTodoTable(todos, projectId) {
@@ -230,21 +248,8 @@ function getAssignees(projectId) {
 }
 
 function getPriorityTodos(todos) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     return todos.filter(todo => {
-        if (todo.completed) return false;
-
-        const dueDate = todo.dueDate ? new Date(todo.dueDate) : null;
-        const daysUntilDue = dueDate ? Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24)) : Infinity;
-
-        return (todo.priority === 'high') ||
-               (todo.priority === 'medium' && daysUntilDue <= 3) ||
-               (daysUntilDue <= 1);
-    }).sort((a, b) => {
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
-        return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
+        return !todo.completed && todo.priority === 'high';
     });
 }
 
@@ -263,6 +268,7 @@ function updateTodoPriority(todoId, priority) {
     if (todo) {
         todo.priority = priority;
         updateTodo(projectId, todo);
+        filterAndSortTodos(projectId); // 우선순위 변경 후 목록 다시 필터링 및 정렬
     }
 }
 
@@ -324,7 +330,7 @@ function handleTodoChange(data) {
         updateAssigneeProgress(data.projectId);
         showProjectStatistics(data.projectId);
     }
-    updateProjectList();
+    updateProjectInUI(projects.find(p => p.id === data.projectId));
 }
 
 function getCurrentProjectId() {

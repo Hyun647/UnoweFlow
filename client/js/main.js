@@ -39,7 +39,9 @@ function handleWebSocketMessage(data) {
             projects = data.projects;
             todos = data.todos;
             projectAssignees = data.projectAssignees || {};
-            updateProjectList();
+            if (document.getElementById('project-list')) {
+                updateProjectList();
+            }
             break;
         case 'PROJECT_ADDED':
         case 'PROJECT_UPDATED':
@@ -52,11 +54,14 @@ function handleWebSocketMessage(data) {
             handleTodoChange(data);
             break;
         case 'ASSIGNEE_ADDED':
+        case 'ASSIGNEE_DELETED':
             if (!projectAssignees[data.projectId]) {
                 projectAssignees[data.projectId] = [];
             }
-            if (!projectAssignees[data.projectId].includes(data.assigneeName)) {
+            if (data.type === 'ASSIGNEE_ADDED') {
                 projectAssignees[data.projectId].push(data.assigneeName);
+            } else {
+                projectAssignees[data.projectId] = projectAssignees[data.projectId].filter(a => a !== data.assigneeName);
             }
             updateAssigneeListInModal(data.projectId);
             updateAssigneeProgress(data.projectId);
@@ -67,9 +72,40 @@ function handleWebSocketMessage(data) {
             }
             updateAssigneeListInModal(data.projectId);
             updateAssigneeProgress(data.projectId);
+            removeAssigneeFromTodos(data.projectId, data.assigneeName);
             break;
         default:
             console.log('알 수 없는 메시지 타입:', data.type);
+    }
+    console.log('현재 프로젝트 목록:', projects);
+    console.log('현재 할 일 목록:', todos);
+}
+
+function removeAssigneeFromTodos(projectId, assigneeName) {
+    if (todos[projectId]) {
+        todos[projectId] = todos[projectId].map(todo => {
+            if (todo.assignee === assigneeName) {
+                return { ...todo, assignee: '' };
+            }
+            return todo;
+        });
+        
+        // 현재 프로젝트 페이지에 있다면 할 일 목록 업데이트
+        const currentProjectId = getCurrentProjectId();
+        if (currentProjectId === projectId) {
+            filterAndSortTodos(projectId);
+        }
+        
+        // 서버에 업데이트된 할 일 정보 전송
+        todos[projectId].forEach(todo => {
+            if (todo.assignee === '') {
+                socket.send(JSON.stringify({
+                    type: 'UPDATE_TODO',
+                    projectId: projectId,
+                    todo: todo
+                }));
+            }
+        });
     }
 }
 
@@ -78,3 +114,29 @@ window.addEventListener('load', () => {
     initializeWebSocket();
     showProjectList();  // 초기 화면으로 프로젝트 목록 표시
 });
+
+// 전역 스코프에서 필요한 함수들을 정의하거나 다른 파일에서 가져옵니다.
+// 예: window.showProjectDetails = showProjectDetails;
+
+function updateProjectInUI(project) {
+    console.log('프로젝트 UI 업데이트:', project);
+    const projectElement = document.getElementById(`project-${project.id}`);
+    if (projectElement) {
+        const projectNameElement = projectElement.querySelector('.project-name');
+        if (projectNameElement) {
+            projectNameElement.textContent = project.name || '이름 없음';
+        }
+        const progressBar = projectElement.querySelector('.progress-bar');
+        const progressText = projectElement.querySelector('.progress-text');
+        if (progressBar && progressText) {
+            const progress = project.progress || 0;
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `${progress}%`;
+        }
+    }
+    // 프로젝트 목록 페이지에 있을 경우에만 updateProjectList 호출
+    const projectList = document.getElementById('project-list');
+    if (projectList) {
+        updateProjectList();
+    }
+}

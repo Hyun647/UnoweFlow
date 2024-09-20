@@ -16,8 +16,14 @@ function showProjectList() {
 function updateProjectList(filteredProjects = projects) {
     console.log('프로젝트 리스트 업데이트:', filteredProjects);
     const projectList = document.getElementById('project-list');
-    if (projectList) {
-        projectList.innerHTML = '';
+    if (!projectList) {
+        console.error('project-list 요소를 찾을 수 없습니다.');
+        return;
+    }
+    projectList.innerHTML = '';
+    if (filteredProjects.length === 0) {
+        projectList.innerHTML = '<p>프로젝트가 없습니다.</p>';
+    } else {
         filteredProjects.forEach(project => {
             if (project && typeof project.name === 'string') {
                 const projectElement = createProjectElement(project);
@@ -25,6 +31,7 @@ function updateProjectList(filteredProjects = projects) {
             }
         });
     }
+    console.log('프로젝트 리스트 HTML:', projectList.innerHTML); // 디버깅용 로그 추가
 }
 
 function createProjectElement(project) {
@@ -58,3 +65,26 @@ function searchProjects() {
     });
     updateProjectList(filteredProjects);
 }
+
+function addProject() {
+    const projectInput = document.getElementById('project-input');
+    const projectName = projectInput.value.trim();
+    if (projectName) {
+        console.log('프로젝트 추가 요청:', projectName);
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: 'ADD_PROJECT', name: projectName }));
+            projectInput.value = '';
+        } else {
+            console.error('WebSocket 연결이 열려있지 않습니다.');
+            alert('서버와의 연결이 끊어졌습니다. 페이지를 새로고침해주세요.');
+        }
+    } else {
+        console.log('프로젝트 이름이 비어있습니다.');
+        alert('프로젝트 이름을 입력해주세요.');
+    }
+}
+
+// 페이지 로드 시 프로젝트 목록 표시
+window.addEventListener('DOMContentLoaded', () => {
+    showProjectList();
+});
