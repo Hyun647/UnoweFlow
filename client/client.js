@@ -9,7 +9,7 @@ function initializeWebSocket() {
 
     socket.onopen = () => {
         console.log('WebSocket 연결이 열렸습니다.');
-        showProjectList();
+        requestProjectList(); // 프로젝트 목록 요청
     };
 
     socket.onmessage = (event) => {
@@ -37,8 +37,12 @@ function handleWebSocketMessage(data) {
             updateProjectList();
             break;
         case 'PROJECT_ADDED':
-            projects.push(data.project);
-            updateProjectList();
+            if (data.project && data.project.name) {
+                projects.push(data.project);
+                updateProjectList();
+            } else {
+                console.error('Invalid project data received:', data);
+            }
             break;
         case 'PROJECT_UPDATED':
             const projectIndex = projects.findIndex(p => p.id === data.project.id);
@@ -84,7 +88,7 @@ function handleWebSocketMessage(data) {
                 projectAssignees[data.projectId].push(data.assigneeName);
             }
             updateAllTodoAssigneeOptions(data.projectId);
-            updateAssigneeList(data.projectId);
+            updateAssigneeListInModal(data.projectId);
             // 현재 프로젝트의 할 일 목록을 업데이트
             const currentProjectIdForAssignee = getCurrentProjectId();
             if (currentProjectIdForAssignee === data.projectId) {
@@ -95,7 +99,15 @@ function handleWebSocketMessage(data) {
             projectAssignees[data.projectId] = projectAssignees[data.projectId].filter(
                 assignee => assignee !== data.assigneeName
             );
-            updateAssigneeList(data.projectId);
+            updateAssigneeListInModal(data.projectId);
+            break;
+        case 'PROJECTS_LIST':
+            if (Array.isArray(data.projects)) {
+                projects = data.projects;
+                updateProjectList();
+            } else {
+                console.error('Invalid projects list received:', data);
+            }
             break;
     }
 }
@@ -103,7 +115,7 @@ function handleWebSocketMessage(data) {
 function showProjectList() {
     const mainContent = document.getElementById('main-content');
     mainContent.innerHTML = `
-        <h2>프로젝트 목록</h2>
+        <h2>프트 목록</h2>
         <div id="project-form">
             <input type="text" id="project-input" placeholder="새 프로젝트 이름">
             <button id="add-project-btn">프로젝트 추가</button>
@@ -128,10 +140,11 @@ function createProjectElement(project) {
     const projectElement = document.createElement('div');
     projectElement.id = `project-${project.id}`;
     projectElement.className = 'project';
+    const progress = project.progress || 0;
     projectElement.innerHTML = `
-        <h3 class="project-name">${project.name}</h3>
-        <div class="progress-circle" data-progress="${project.progress || 0}">
-            <div class="progress-circle-value">${project.progress || 0}%</div>
+        <h3 class="project-name">${project.name || '이름 없음'}</h3>
+        <div class="progress-circle" data-progress="${progress}">
+            <div class="progress-circle-value">${progress}%</div>
         </div>
         <div class="project-buttons">
             <button onclick="showProjectDetails('${project.id}')">보기</button>
@@ -145,10 +158,13 @@ function createProjectElement(project) {
 function showProjectDetails(projectId) {
     const mainContent = document.getElementById('main-content');
     const project = projects.find(p => p.id === projectId);
-    if (!project) return;
+    if (!project) {
+        console.error('Project not found:', projectId);
+        return;
+    }
 
     mainContent.innerHTML = `
-        <h2 id="project-details-title" data-project-id="${projectId}">${project.name} 상세</h2>
+        <h2 id="project-details-title" data-project-id="${projectId}">${project.name || '이름 없음'} 상세</h2>
         <div id="assignee-progress"></div>
         <div id="todo-filters">
             <select id="filter-priority" onchange="filterAndSortTodos('${projectId}')">
@@ -213,8 +229,9 @@ function deleteProject(projectId) {
 function renameProject(projectId) {
     const projectElement = document.getElementById(`project-${projectId}`);
     const projectNameElement = projectElement.querySelector('.project-name');
-    const newName = prompt('새로운 프로젝트 이름을 입력하세요:', projectNameElement.textContent);
-    if (newName && newName.trim() !== '') {
+    const currentName = projectNameElement.textContent;
+    const newName = prompt('새로운 프로젝트 이름을 입력하세요:', currentName);
+    if (newName && newName.trim() !== '' && newName !== currentName) {
         socket.send(JSON.stringify({
             type: 'UPDATE_PROJECT',
             project: { id: projectId, name: newName.trim() }
@@ -225,8 +242,14 @@ function renameProject(projectId) {
 function updateProjectInUI(project) {
     const projectElement = document.getElementById(`project-${project.id}`);
     if (projectElement) {
-        projectElement.querySelector('.project-name').textContent = project.name;
-        projectElement.querySelector('.progress-circle-value').textContent = `${project.progress}%`;
+        projectElement.querySelector('.project-name').textContent = project.name || '이름 없음';
+        const progressCircle = projectElement.querySelector('.progress-circle');
+        const progressValue = projectElement.querySelector('.progress-circle-value');
+        if (progressCircle && progressValue) {
+            const progress = project.progress || 0;
+            progressCircle.dataset.progress = progress;
+            progressValue.textContent = `${progress}%`;
+        }
     }
 }
 
@@ -243,11 +266,9 @@ function getAssignees(projectId) {
 
 function getAssigneeOptions(projectId, currentAssignee = '') {
     const assignees = getAssignees(projectId);
-    let options = '<option value="">미지정</option>';
-    options += assignees.map(assignee => 
+    return assignees.map(assignee => 
         `<option value="${assignee}" ${assignee === currentAssignee ? 'selected' : ''}>${assignee}</option>`
     ).join('');
-    return options;
 }
 
 function updateTodoAssignee(todoId, newAssignee) {
@@ -362,25 +383,13 @@ function addNewAssignee(projectId) {
             assigneeName: newAssigneeName
         }));
         document.getElementById('new-assignee-name').value = '';
-        // 모달을 닫습니다.
-        closeModal();
+        // 담당자 목록 업데이트
+        updateAssigneeListInModal(projectId);
     }
 }
 
-function deleteAssignee(projectId, assigneeName) {
-    if (confirm(`정말로 ${assigneeName}을(를) 삭제하시겠습니까?`)) {
-        socket.send(JSON.stringify({
-            type: 'DELETE_ASSIGNEE',
-            projectId: projectId,
-            assigneeName: assigneeName
-        }));
-    }
-}
-
-function updateAssigneeList(projectId) {
+function updateAssigneeListInModal(projectId) {
     const assigneeList = document.getElementById('assignee-list');
-    if (!assigneeList) return;
-    
     const assignees = getAssignees(projectId);
     
     let assigneeListHTML = '';
@@ -394,128 +403,6 @@ function updateAssigneeList(projectId) {
     });
     
     assigneeList.innerHTML = assigneeListHTML;
-    
-    updateAllTodoAssigneeOptions(projectId);
-}
-
-function updateAllTodoAssigneeOptions(projectId) {
-    const todoItems = document.querySelectorAll('.todo-item');
-    todoItems.forEach(todoItem => {
-        const assigneeSelect = todoItem.querySelector('.todo-assignee');
-        if (assigneeSelect) {
-            const currentAssignee = assigneeSelect.value;
-            assigneeSelect.innerHTML = getAssigneeOptions(projectId, currentAssignee);
-        }
-    });
-    
-    const newTodoAssigneeSelect = document.getElementById('new-todo-assignee');
-    if (newTodoAssigneeSelect) {
-        newTodoAssigneeSelect.innerHTML = getAssigneeOptions(projectId);
-    }
-
-    // 필터 옵션도 업데이트
-    const filterAssigneeSelect = document.getElementById('filter-assignee');
-    if (filterAssigneeSelect) {
-        const currentFilterAssignee = filterAssigneeSelect.value;
-        filterAssigneeSelect.innerHTML = `<option value="all">모든 담당자</option>${getAssigneeOptions(projectId, currentFilterAssignee)}`;
-    }
-}
-
-function deleteTodo(todoId) {
-    const projectId = getCurrentProjectId();
-    if (projectId) {
-        if (confirm('정말로 이 할 일을 삭제하시겠습니까?')) {
-            socket.send(JSON.stringify({
-                type: 'DELETE_TODO',
-                projectId: projectId,
-                todoId: todoId
-            }));
-        }
-    } else {
-        console.error('현재 프로젝트 ID를 을 수 없습니다.');
-    }
-}
-
-function editTodo(todoId) {
-    const todoElement = document.getElementById(`todo-${todoId}`);
-    const todoTextElement = todoElement.querySelector('.todo-text');
-    const newText = prompt('할 일을 수정하세요:', todoTextElement.textContent);
-    if (newText && newText.trim() !== '') {
-        const projectId = getCurrentProjectId();
-        const updatedTodo = {
-            id: todoId,
-            text: newText.trim(),
-            completed: todoElement.querySelector('.todo-checkbox').checked,
-            assignee: todoElement.querySelector('.todo-assignee').value,
-            priority: todoElement.querySelector('.todo-priority').value,
-            dueDate: todoElement.querySelector('.todo-due-date').value
-        };
-        updateTodo(projectId, updatedTodo);
-    }
-}
-
-function filterAndSortTodos(projectId) {
-    const filterPriority = document.getElementById('filter-priority').value;
-    const filterAssignee = document.getElementById('filter-assignee').value;
-    const sortBy = document.getElementById('sort-by').value;
-
-    let filteredTodos = todos[projectId] || [];
-
-    if (filterPriority !== 'all') {
-        filteredTodos = filteredTodos.filter(todo => todo.priority === filterPriority);
-    }
-    if (filterAssignee !== 'all') {
-        filteredTodos = filteredTodos.filter(todo => todo.assignee === filterAssignee);
-    }
-
-    filteredTodos.sort((a, b) => {
-        switch (sortBy) {
-            case 'priority':
-                const priorityOrder = { high: 3, medium: 2, low: 1 };
-                return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
-            case 'dueDate':
-                return new Date(a.dueDate || '9999-12-31') - new Date(b.dueDate || '9999-12-31');
-            case 'assignee':
-                return (a.assignee || '').localeCompare(b.assignee || '');
-            default:
-                return 0;
-        }
-    });
-
-    updateTodoList(projectId, filteredTodos);
-}
-
-function showProjectStatistics(projectId) {
-    const project = projects.find(p => p.id === projectId);
-    const projectTodos = todos[projectId] || [];
-    const totalTodos = projectTodos.length;
-    const completedTodos = projectTodos.filter(todo => todo.completed).length;
-    const completionRate = totalTodos > 0 ? (completedTodos / totalTodos * 100).toFixed(2) : 0;
-
-    const statistics = `
-        <h3>프로젝트 통계</h3>
-        <p>전체 할 일: ${totalTodos}</p>
-        <p>완료된 할 일: ${completedTodos}</p>
-        <p>완료율: ${completionRate}%</p>
-    `;
-
-    const statisticsElement = document.getElementById('project-statistics');
-    statisticsElement.innerHTML = statistics;
-}
-
-function searchProjects() {
-    const searchInput = document.getElementById('project-search');
-    const searchTerm = searchInput.value.toLowerCase();
-    const filteredProjects = projects.filter(project => project.name.toLowerCase().includes(searchTerm));
-    updateProjectList(filteredProjects);
-}
-
-function searchTodos(projectId) {
-    const searchInput = document.getElementById('todo-search');
-    const searchTerm = searchInput.value.toLowerCase();
-    const filteredTodos = todos[projectId] || [];
-    const filteredAndSortedTodos = filteredTodos.filter(todo => todo.text.toLowerCase().includes(searchTerm));
-    updateTodoList(projectId, filteredAndSortedTodos);
 }
 
 function showManageAssigneesModal(projectId) {
@@ -539,7 +426,7 @@ function showManageAssigneesModal(projectId) {
             <ul id="assignee-list">
                 ${assigneeListHTML}
             </ul>
-            <input type="text" id="new-assignee-name" placeholder=" 담당자 이름">
+            <input type="text" id="new-assignee-name" placeholder="담당자 이름">
             <button onclick="addNewAssignee('${projectId}')">담당자 추가</button>
             <button onclick="closeModal()">닫기</button>
         </div>
@@ -657,11 +544,11 @@ function updateAssigneeProgress(projectId) {
     if (!assigneeProgressElement) return;
 
     const projectTodos = todos[projectId] || [];
-    const assignees = ['미지정', ...getAssignees(projectId)];
+    const assignees = getAssignees(projectId);
 
     let progressHTML = '';
     assignees.forEach(assignee => {
-        const assigneeTodos = projectTodos.filter(todo => (todo.assignee || '미지정') === assignee);
+        const assigneeTodos = projectTodos.filter(todo => todo.assignee === assignee);
         const totalTodos = assigneeTodos.length;
         const completedTodos = assigneeTodos.filter(todo => todo.completed).length;
         const progress = totalTodos > 0 ? Math.round((completedTodos / totalTodos) * 100) : 0;
@@ -696,6 +583,99 @@ function addTodo(projectId) {
         document.getElementById('new-todo-priority').value = 'low';
         document.getElementById('new-todo-due-date').value = '';
     }
+}
+
+function filterAndSortTodos(projectId) {
+    const filterPriority = document.getElementById('filter-priority').value;
+    const filterAssignee = document.getElementById('filter-assignee').value;
+    const sortBy = document.getElementById('sort-by').value;
+
+    let filteredTodos = todos[projectId] || [];
+
+    // 우선순위 필터링
+    if (filterPriority !== 'all') {
+        filteredTodos = filteredTodos.filter(todo => todo.priority === filterPriority);
+    }
+
+    // 담당자 필터링
+    if (filterAssignee !== 'all') {
+        filteredTodos = filteredTodos.filter(todo => todo.assignee === filterAssignee);
+    }
+
+    // 정렬
+    filteredTodos.sort((a, b) => {
+        switch (sortBy) {
+            case 'priority':
+                const priorityOrder = { high: 3, medium: 2, low: 1 };
+                return priorityOrder[b.priority] - priorityOrder[a.priority];
+            case 'dueDate':
+                return new Date(a.dueDate || '9999-12-31') - new Date(b.dueDate || '9999-12-31');
+            case 'assignee':
+                return (a.assignee || '').localeCompare(b.assignee || '');
+            default:
+                return 0;
+        }
+    });
+
+    updateTodoList(projectId, filteredTodos);
+}
+
+function updateAllTodoAssigneeOptions(projectId) {
+    const todoItems = document.querySelectorAll('.todo-item');
+    todoItems.forEach(todoItem => {
+        const assigneeSelect = todoItem.querySelector('.todo-assignee');
+        if (assigneeSelect) {
+            const currentAssignee = assigneeSelect.value;
+            assigneeSelect.innerHTML = getAssigneeOptions(projectId, currentAssignee);
+        }
+    });
+    
+    // 새 할 일 입력 폼의 담당자 옵션도 업데이트
+    const newTodoAssigneeSelect = document.getElementById('new-todo-assignee');
+    if (newTodoAssigneeSelect) {
+        newTodoAssigneeSelect.innerHTML = getAssigneeOptions(projectId);
+    }
+
+    // 필터 옵션도 업데이트
+    const filterAssigneeSelect = document.getElementById('filter-assignee');
+    if (filterAssigneeSelect) {
+        const currentFilterAssignee = filterAssigneeSelect.value;
+        filterAssigneeSelect.innerHTML = `<option value="all">모든 담당자</option>${getAssigneeOptions(projectId, currentFilterAssignee)}`;
+    }
+}
+
+function showProjectStatistics(projectId) {
+    const project = projects.find(p => p.id === projectId);
+    const projectTodos = todos[projectId] || [];
+    const totalTodos = projectTodos.length;
+    const completedTodos = projectTodos.filter(todo => todo.completed).length;
+    const completionRate = totalTodos > 0 ? (completedTodos / totalTodos * 100).toFixed(2) : 0;
+
+    const statistics = `
+        <h3>프로젝트 통계</h3>
+        <p>전체 할 일: ${totalTodos}</p>
+        <p>완료된 할 일: ${completedTodos}</p>
+        <p>완료율: ${completionRate}%</p>
+    `;
+
+    const statisticsElement = document.getElementById('project-statistics');
+    if (statisticsElement) {
+        statisticsElement.innerHTML = statistics;
+    }
+
+    // 프로젝트 진행률 업데이트
+    project.progress = Math.round(parseFloat(completionRate));
+    updateProjectInUI(project);
+
+    // 서버에 프로젝트 진행률 업데이트 요청
+    socket.send(JSON.stringify({
+        type: 'UPDATE_PROJECT',
+        project: { id: projectId, progress: project.progress }
+    }));
+}
+
+function requestProjectList() {
+    socket.send(JSON.stringify({ type: 'GET_PROJECTS' }));
 }
 
 window.addEventListener('load', () => {

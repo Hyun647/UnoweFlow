@@ -41,7 +41,15 @@ wss.on('connection', (ws) => {
                 addProject(data.name);
                 break;
             case 'UPDATE_PROJECT':
-                updateProject(data.project);
+                const projectToUpdate = projects.find(p => p.id === data.project.id);
+                if (projectToUpdate) {
+                    projectToUpdate.name = data.project.name || projectToUpdate.name;
+                    projectToUpdate.progress = data.project.progress !== undefined ? data.project.progress : projectToUpdate.progress;
+                    broadcastToAll(JSON.stringify({
+                        type: 'PROJECT_UPDATED',
+                        project: projectToUpdate
+                    }));
+                }
                 break;
             case 'DELETE_PROJECT':
                 deleteProject(data.projectId);
