@@ -129,12 +129,15 @@ function createProjectElement(project) {
     projectElement.id = `project-${project.id}`;
     projectElement.className = 'project';
     projectElement.innerHTML = `
-        <h3 class="project-name" onclick="showProjectDetails('${project.id}')">${project.name}</h3>
-        <button onclick="editProject('${project.id}')">편집</button>
+        <h3 class="project-name">${project.name}</h3>
         <div class="progress-circle" data-progress="${project.progress || 0}">
             <div class="progress-circle-value">${project.progress || 0}%</div>
         </div>
-        <button onclick="deleteProject('${project.id}')">삭제</button>
+        <div class="project-buttons">
+            <button onclick="showProjectDetails('${project.id}')">보기</button>
+            <button onclick="renameProject('${project.id}')">이름 변경</button>
+            <button class="delete-btn" onclick="deleteProject('${project.id}')">삭제</button>
+        </div>
     `;
     return projectElement;
 }
@@ -207,10 +210,10 @@ function deleteProject(projectId) {
     }
 }
 
-function editProject(projectId) {
+function renameProject(projectId) {
     const projectElement = document.getElementById(`project-${projectId}`);
     const projectNameElement = projectElement.querySelector('.project-name');
-    const newName = prompt('프로젝트 이름을 수정하세요:', projectNameElement.textContent);
+    const newName = prompt('새로운 프로젝트 이름을 입력하세요:', projectNameElement.textContent);
     if (newName && newName.trim() !== '') {
         socket.send(JSON.stringify({
             type: 'UPDATE_PROJECT',
@@ -585,7 +588,7 @@ function createTodoTable(todos, projectId) {
                 <th>내용</th>
                 <th>담당자</th>
                 <th>우선순위</th>
-                <th>마감일</th>
+                <th>마일</th>
                 <th>작업</th>
             </tr>
         </thead>
