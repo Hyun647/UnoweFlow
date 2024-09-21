@@ -1,67 +1,121 @@
 function showProjectList() {
     const mainContent = document.getElementById('main-content');
-    mainContent.innerHTML = `
-        <h2>프로젝트 목록</h2>
-        <div id="project-form">
-            <input type="text" id="project-input" placeholder="새 프로젝트 이름">
-            <button id="add-project-btn">프로젝트 추가</button>
-        </div>
-        <input type="text" id="project-search" placeholder="프로젝트 검색" onkeyup="searchProjects()">
-        <div id="project-list"></div>
-    `;
-    document.getElementById('add-project-btn').addEventListener('click', addProject);
-    updateProjectList();
-}
-
-function updateProjectList(filteredProjects = projects) {
-    const projectList = document.getElementById('project-list');
-    if (!projectList) {
-        console.error('project-list 요소를 찾을 수 없습니다.');
+    if (!mainContent) {
         return;
     }
-    projectList.innerHTML = '';
-    if (filteredProjects.length === 0) {
-        projectList.innerHTML = '<p>프로젝트가 없습니다.</p>';
-    } else {
-        filteredProjects.forEach(project => {
-            if (project && typeof project.name === 'string') {
-                const projectElement = createProjectElement(project);
-                projectList.appendChild(projectElement);
-            }
-        });
+    mainContent.innerHTML = `
+        <div class="content">
+            <div id="project-management">
+                <div id="project-input-container">
+                    <input type="text" id="project-input" placeholder="새 프로젝트 이름">
+                    <button onclick="addProject()" class="button">프로젝트 추가</button>
+                </div>
+            </div>
+            <div id="dashboard">
+                <h2>프로젝트 대시보드</h2>
+                <div id="project-summary">
+                    <div class="summary-card">
+                        <h3>전체 프로젝트</h3>
+                        <p id="total-projects">0</p>
+                    </div>
+                    <div class="summary-card">
+                        <h3>진행 중인 프로젝트</h3>
+                        <p id="ongoing-projects">0</p>
+                    </div>
+                    <div class="summary-card">
+                        <h3>완료된 프로젝트</h3>
+                        <p id="completed-projects">0</p>
+                    </div>
+                </div>
+                <div id="recent-activities">
+                    <h3>공지사항</h3>
+                    <ul id="activity-list">
+                        <!-- 공지사항 목록이 여기에 동적으로 추가됩니다 -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `;
+    updateProjectList();
+    updateDashboard();
+}
+
+function updateDashboard() {
+    const totalProjectsElement = document.getElementById('total-projects');
+    const ongoingProjectsElement = document.getElementById('ongoing-projects');
+    const completedProjectsElement = document.getElementById('completed-projects');
+    const activityList = document.getElementById('activity-list');
+
+    if (!totalProjectsElement || !ongoingProjectsElement || !completedProjectsElement) {
+        console.log('대시보드 요소를 찾을 수 없습니다. 현재 대시보드 페이지가 아닐 수 있습니다.');
+        return;
+    }
+
+    const totalProjects = projects.length;
+    const ongoingProjects = projects.filter(p => p.progress < 100).length;
+    const completedProjects = projects.filter(p => p.progress === 100).length;
+
+    totalProjectsElement.textContent = totalProjects;
+    ongoingProjectsElement.textContent = ongoingProjects;
+    completedProjectsElement.textContent = completedProjects;
+
+    if (activityList) {
+        activityList.innerHTML = `
+            <li>UnoweFlow로 프로젝트 관리의 효율성을 높이세요!</li>
+            <li>직관적인 UI로 팀 협업이 더욱 쉬워집니다.</li>
+            <li>지금 바로 UnoweFlow를 시작해보세요!</li>
+        `;
     }
 }
 
-function createProjectElement(project) {
-    const projectElement = document.createElement('div');
-    projectElement.id = `project-${project.id}`;
-    projectElement.className = 'project';
-    const progress = project.progress || 0;
-    projectElement.innerHTML = `
-        <h3 class="project-name">${project.name || '이름 없음'}</h3>
-        <div class="progress-bar-container">
-            <div class="progress-bar" style="width: ${progress}%"></div>
-            <span class="progress-text">${progress}%</span>
-        </div>
-        <div class="project-buttons">
-            <button onclick="showProjectDetails('${project.id}')">보기</button>
-            <button onclick="renameProject('${project.id}')">이름 변경</button>
-            <button class="delete-btn" onclick="deleteProject('${project.id}')">삭제</button>
-        </div>
-    `;
-    return projectElement;
+function updateProjectList() {
+    const sidebarProjectList = document.getElementById('project-list');
+    
+    if (sidebarProjectList) {
+        sidebarProjectList.innerHTML = '';
+        projects.forEach(project => {
+            const li = document.createElement('li');
+            li.className = 'project-item';
+            li.id = `project-${project.id}`;
+            li.innerHTML = `
+                <div class="project-header">
+                    <span class="project-name">${project.name}</span>
+                </div>
+                <div class="project-progress">
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: ${project.progress || 0}%"></div>
+                    </div>
+                    <span class="progress-text">${project.progress || 0}%</span>
+                </div>
+            `;
+            li.addEventListener('click', () => {
+                if (typeof window.showProjectDetails === 'function') {
+                    window.showProjectDetails(project.id);
+                } else {
+                    console.error('showProjectDetails 함수를 찾을 수 없습니다.');
+                }
+            });
+            sidebarProjectList.appendChild(li);
+        });
+    }
+    
+    // 대시보드 페이지에 있을 때만 updateDashboard 호출
+    if (document.getElementById('dashboard')) {
+        updateDashboard();
+    }
 }
 
 function searchProjects() {
-    const searchInput = document.getElementById('project-search');
-    const searchTerm = searchInput.value.toLowerCase();
-    const filteredProjects = projects.filter(project => {
-        if (project && typeof project.name === 'string') {
-            return project.name.toLowerCase().includes(searchTerm);
+    const searchTerm = document.getElementById('project-search').value.toLowerCase();
+    const projectItems = document.querySelectorAll('.project-item');
+    projectItems.forEach(item => {
+        const projectName = item.querySelector('.project-name').textContent.toLowerCase();
+        if (projectName.includes(searchTerm)) {
+            item.style.display = '';
+        } else {
+            item.style.display = 'none';
         }
-        return false;
     });
-    updateProjectList(filteredProjects);
 }
 
 function addProject() {
@@ -79,7 +133,8 @@ function addProject() {
     }
 }
 
-// 페이지 로드 시 프로젝트 목록 표시
-window.addEventListener('DOMContentLoaded', () => {
-    showProjectList();
-});
+// 전역 스코프에 함수 노출
+window.showProjectList = showProjectList;
+window.addProject = addProject;
+window.searchProjects = searchProjects;
+window.updateProjectList = updateProjectList;

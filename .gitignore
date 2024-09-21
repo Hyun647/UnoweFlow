@@ -1,0 +1,24 @@
+# 노드 모듈
+node_modules/
+
+# 로그 파일
+*.log
+
+# 운영체제 파일
+.DS_Store
+Thumbs.db
+
+# 환경 설정 파일
+.env
+
+# IDE 설정 파일
+.vscode/
+.idea/
+
+# 빌드 결과물
+/dist
+/build
+
+# 임시 파일
+*.tmp
+*.temp
