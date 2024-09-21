@@ -60,7 +60,6 @@ function initializeWebSocket() {
                 }
                 break;
             default:
-                console.log('알 수 없는 메시지 타입');
         }
     };
 
@@ -119,7 +118,6 @@ function handleWebSocketMessage(data) {
             removeAssigneeFromTodos(data.projectId, data.assigneeName);
             break;
         default:
-            console.log('알 수 없는 메시지 타입');
     }
 }
 
@@ -160,18 +158,14 @@ window.addEventListener('load', () => {
     const hamburgerMenu = document.querySelector('.hamburger-menu');
     if (hamburgerMenu) {
         hamburgerMenu.addEventListener('click', toggleSidebar);
-        console.log('햄버거 메뉴 이벤트 리스너 추가됨');
     } else {
-        console.error('햄버거 메뉴 요소를 찾을 수 없습니다.');
     }
 
     // 프로젝트 검색 이벤트 리스너 추가
     const projectSearch = document.getElementById('project-search');
     if (projectSearch) {
         projectSearch.addEventListener('input', searchProjects);
-        console.log('프로젝트 검색 이벤트 리스너 추가됨');
     } else {
-        console.error('프로젝트 검색 요소를 찾을 수 없습니다.');
     }
 });
 
@@ -179,7 +173,6 @@ window.addEventListener('load', () => {
 // 예: window.showProjectDetails = showProjectDetails;
 
 function updateProjectInUI(project) {
-    console.log('프로젝트 UI 업데이트');
     const projectElement = document.getElementById(`project-${project.id}`);
     if (projectElement) {
         const projectNameElement = projectElement.querySelector('.project-name');
@@ -202,36 +195,76 @@ function updateProjectInUI(project) {
 }
 
 function toggleSidebar() {
-    console.log('toggleSidebar 함수 호출됨');
     const sidebar = document.querySelector('.sidebar');
     const content = document.querySelector('.content');
+    
     if (sidebar && content) {
         sidebar.classList.toggle('open');
         content.classList.toggle('sidebar-open');
-        if (content.classList.contains('sidebar-open')) {
-            content.style.marginLeft = '256px';
-            content.style.width = 'calc(100% - 256px)';
-        } else {
-            content.style.marginLeft = '0';
-            content.style.width = '100%';
-        }
-        console.log('사이드바 상태:', sidebar.classList.contains('open') ? '열림' : '닫힘');
-    } else {
-        console.error('사이드바 또는 콘텐츠 요소를 찾을 수 없습니다.');
+        
+        // 트랜지션이 끝난 후 레이아웃 재조정
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+        }, 300); // CSS 트랜지션 시간과 일치시킴
+    }
+}
+
+// closeSidebar 함수도 유사하게 수정
+function closeSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const content = document.querySelector('.content');
+    
+    if (sidebar && content) {
+        sidebar.classList.remove('open');
+        content.classList.remove('sidebar-open');
+        
+        // 트랜지션이 끝난 후 레이아웃 재조정
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+        }, 300); // CSS 트랜지션 시간과 일치시킴
     }
 }
 
 // 전역 스코프에 노출
 window.toggleSidebar = toggleSidebar;
 
-function closeSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    const content = document.querySelector('.content');
-    if (sidebar && content) {
-        sidebar.classList.remove('open');
-        content.classList.remove('sidebar-open');
+window.closeSidebar = closeSidebar;
+
+function handleProjectChange(data) {
+    switch (data.type) {
+        case 'PROJECT_ADDED':
+            if (data.project && data.project.name) {
+                projects.push(data.project);
+                updateProjectList();
+            } else {
+                console.error('Invalid project data received:', data);
+            }
+            break;
+        case 'PROJECT_UPDATED':
+            const index = projects.findIndex(p => p.id === data.project.id);
+            if (index !== -1) {
+                projects[index] = data.project;
+                updateProjectInUI(data.project);
+                updateProjectList();
+            }
+            break;
+        case 'PROJECT_DELETED':
+            projects = projects.filter(p => p.id !== data.projectId);
+            removeProjectFromUI(data.projectId);
+            updateProjectList();
+            // 만약 현재 삭제된 프로젝의 상세 페이지를 보고 있다면 프로젝트 목록으로 이동
+            if (getCurrentProjectId() === data.projectId) {
+                showProjectList();
+            }
+            break;
     }
 }
 
-// 전역 스코프에 노출
-window.closeSidebar = closeSidebar;
+// showProjectDetails 함수를 전역 스코프에 노출
+if (typeof window.showProjectDetails !== 'function') {
+    window.showProjectDetails = function(projectId) {
+        if (typeof showProjectDetails === 'function') {
+            showProjectDetails(projectId);
+        }
+    };
+}

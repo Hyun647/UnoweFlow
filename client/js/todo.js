@@ -101,7 +101,6 @@ function filterAndSortTodos(projectId, searchTerm = '') {
     }
 
     updateTodoList(filteredTodos);
-    console.log('Filtered and sorted todos:', filteredTodos.length, 'items');
 }
 
 function updateAssigneeProgress(projectId) {

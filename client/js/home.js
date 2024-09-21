@@ -1,5 +1,8 @@
 function showProjectList() {
     const mainContent = document.getElementById('main-content');
+    if (!mainContent) {
+        return;
+    }
     mainContent.innerHTML = `
         <div class="content">
             <div id="project-management">
@@ -36,7 +39,13 @@ function updateProjectList() {
                     <span class="progress-text">${project.progress || 0}%</span>
                 </div>
             `;
-            li.addEventListener('click', () => showProjectDetails(project.id));
+            li.addEventListener('click', () => {
+                if (typeof window.showProjectDetails === 'function') {
+                    window.showProjectDetails(project.id);
+                } else {
+                    console.error('showProjectDetails 함수를 찾을 수 없습니다.');
+                }
+            });
             sidebarProjectList.appendChild(li);
         });
     }
@@ -74,3 +83,4 @@ function addProject() {
 window.showProjectList = showProjectList;
 window.addProject = addProject;
 window.searchProjects = searchProjects;
+window.updateProjectList = updateProjectList;

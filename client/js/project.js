@@ -102,14 +102,20 @@ function showProjectDetails(projectId) {
     }
 
     currentProject = project;
-    const mainContent = document.getElementById('main-content');
-    mainContent.innerHTML = `
+    const mainContentElement = document.getElementById('main-content');
+    if (!mainContentElement) {
+        console.error('main-content 요소를 찾을 수 없습니다.');
+        return;
+    }
+    
+    mainContentElement.innerHTML = `
         <div id="project-details-container">
             <div class="project-header">
                 <h2 id="project-details-title" data-project-id="${project.id}">${project.name || '이름 없음'}</h2>
                 <div class="project-actions">
                     <button onclick="showMemo('${project.id}')" class="button">메모장</button>
                     <button onclick="showManageAssigneesModal('${project.id}')" class="button">담당자 관리</button>
+                    <button onclick="showProjectSettingsModal('${project.id}')" class="button">프로젝트 설정</button>
                 </div>
             </div>
             <div class="project-stats">
@@ -144,7 +150,7 @@ function showProjectDetails(projectId) {
                         ${getAssigneeOptions(project.id)}
                     </select>
                     <select id="new-todo-priority">
-                        <option value="low">낮음</option>
+                        <option value="low">음</option>
                         <option value="medium">중간</option>
                         <option value="high">높음</option>
                     </select>
@@ -170,15 +176,19 @@ function showProjectDetails(projectId) {
         }
     }, 0);
 
-    // 사이드바 닫기
+    // 사이드바 닫기 및 콘텐츠 영역 조정
     const sidebar = document.querySelector('.sidebar');
     const content = document.querySelector('.content');
     if (sidebar && content) {
         sidebar.classList.remove('open');
         content.classList.remove('sidebar-open');
-        mainContent.style.marginLeft = '0';
-        mainContent.style.width = '100%';
+        content.style.marginLeft = '0';
+        content.style.width = '100%';
     }
+
+    // main-content 요소의 스타일도 조정
+    mainContentElement.style.marginLeft = '0';
+    mainContentElement.style.width = '100%';
 }
 
 function getCurrentProjectId() {
@@ -320,15 +330,60 @@ function filterAndSortTodos(projectId) {
     }
 }
 
+function showProjectSettingsModal(projectId) {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3>프로젝트 설정</h3>
+            <div class="form-group">
+                <label for="project-name">프로젝트 이름:</label>
+                <input type="text" id="project-name" value="${project.name}">
+            </div>
+            <div class="button-group">
+                <button onclick="updateProjectName('${projectId}')" class="button">이름 변경</button>
+                <button onclick="deleteProjectConfirm('${projectId}')" class="button delete-btn">프로젝트 삭제</button>
+            </div>
+            <button onclick="closeModal()" class="button close-btn">닫기</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function updateProjectName(projectId) {
+    const newName = document.getElementById('project-name').value.trim();
+    if (newName) {
+        socket.send(JSON.stringify({
+            type: 'UPDATE_PROJECT',
+            project: { id: projectId, name: newName }
+        }));
+        closeModal();
+        
+        // 즉시 UI 업데이트
+        const project = projects.find(p => p.id === projectId);
+        if (project) {
+            project.name = newName;
+            updateProjectInUI(project);
+            updateProjectList();
+        }
+    } else {
+        alert('프로젝트 이름을 입력해주세요.');
+    }
+}
+
+function deleteProjectConfirm(projectId) {
+    if (confirm('정말로 이 프로젝트를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+        socket.send(JSON.stringify({
+            type: 'DELETE_PROJECT',
+            projectId: projectId
+        }));
+        closeModal();
+        showProjectList(); // 프로젝트 목록 페이지로 이동
+    }
+}
+
 // 전역 스코프에 함수 노출
 window.showProjectDetails = showProjectDetails;
-window.renameProject = renameProject;
-window.deleteProject = deleteProject;
-window.showManageAssigneesModal = showManageAssigneesModal;
-window.closeModal = closeModal;
-window.addNewAssignee = addNewAssignee;
-window.deleteAssignee = deleteAssignee;
-window.updateAssigneeListInModal = updateAssigneeListInModal;
-window.updateTodoAssigneeOptions = updateTodoAssigneeOptions;
-window.getAssigneeOptions = getAssigneeOptions;
-window.getAssignees = getAssignees;

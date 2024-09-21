@@ -108,8 +108,11 @@ function updateProject(project) {
     const index = projects.findIndex(p => p.id === project.id);
     if (index !== -1) {
         projects[index] = {...projects[index], ...project};
-        broadcastToAll({ type: 'PROJECT_UPDATED', project: projects[index] });
-        console.log('프로젝트 업데이트됨:', projects[index]);  // 디버깅을 위한 로그
+        broadcastToAll({
+            type: 'PROJECT_UPDATED',
+            project: projects[index]
+        });
+        console.log('프로젝트 업데이트됨:', projects[index]);
     }
 }
 
@@ -117,7 +120,11 @@ function deleteProject(projectId) {
     projects = projects.filter(p => p.id !== projectId);
     delete todos[projectId];
     delete projectAssignees[projectId];
-    broadcastToAll({ type: 'PROJECT_DELETED', projectId: projectId });
+    broadcastToAll({
+        type: 'PROJECT_DELETED',
+        projectId: projectId
+    });
+    console.log('프로젝트 삭제됨:', projectId);
 }
 
 function addTodo(projectId, text, assignee, priority, dueDate) {
