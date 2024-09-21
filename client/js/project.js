@@ -251,7 +251,7 @@ function showManageAssigneesModal(projectId) {
 
     modal.innerHTML = `
         <div class="modal-content">
-            <h3>담당자 관리</h3>
+            <h3 style="color: white;">담당자 관리</h3>
             <ul id="assignee-list">
                 ${assigneeListHTML}
             </ul>
@@ -367,10 +367,10 @@ function showProjectSettingsModal(projectId) {
     modal.className = 'modal';
     modal.innerHTML = `
         <div class="modal-content">
-            <h3>프로젝트 설정</h3>
-            <div class="form-group">
+            <h3 style="color: white;">프로젝트 설정</h3>
+            <div class="form-group" style="width: 100%;">
                 <label for="project-name">프로젝트 이름:</label>
-                <input type="text" id="project-name" value="${project.name}">
+                <input type="text" id="project-name" value="${project.name}" style="width: 100%; box-sizing: border-box;">
             </div>
             <div class="button-group">
                 <button onclick="updateProjectName('${projectId}')" class="button">이름 변경</button>
