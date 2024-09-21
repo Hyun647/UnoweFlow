@@ -36,6 +36,15 @@ function updateTodoAssignee(todoId, newAssignee) {
 
     todo.assignee = newAssignee;
     updateTodo(projectId, todo);
+    
+    // UI 업데이트
+    const todoElement = document.getElementById(`todo-${todoId}`);
+    if (todoElement) {
+        const assigneeSelect = todoElement.querySelector('.todo-assignee');
+        if (assigneeSelect) {
+            assigneeSelect.value = newAssignee;
+        }
+    }
 }
 
 function updateTodo(projectId, updatedTodo) {
@@ -47,45 +56,39 @@ function updateTodo(projectId, updatedTodo) {
 }
 
 function filterAndSortTodos(projectId) {
-    const filterPriority = document.getElementById('filter-priority').value;
-    const filterAssignee = document.getElementById('filter-assignee').value;
-    const sortBy = document.getElementById('sort-by').value;
-    const searchTerm = document.getElementById('todo-search').value.toLowerCase();
+    const priorityFilter = document.getElementById('filter-priority');
+    const assigneeFilter = document.getElementById('filter-assignee');
+    const sortOrder = document.getElementById('sort-by');
 
     let filteredTodos = todos[projectId] || [];
 
-    // 검색어 필터링
-    filteredTodos = filteredTodos.filter(todo => 
-        todo.text.toLowerCase().includes(searchTerm) ||
-        (todo.assignee && todo.assignee.toLowerCase().includes(searchTerm))
-    );
-
     // 우선순위 필터링
-    if (filterPriority !== 'all') {
-        filteredTodos = filteredTodos.filter(todo => todo.priority === filterPriority);
+    if (priorityFilter && priorityFilter.value !== 'all') {
+        filteredTodos = filteredTodos.filter(todo => todo.priority === priorityFilter.value);
     }
 
     // 담당자 필터링
-    if (filterAssignee !== 'all') {
-        filteredTodos = filteredTodos.filter(todo => todo.assignee === filterAssignee);
+    if (assigneeFilter && assigneeFilter.value !== 'all') {
+        filteredTodos = filteredTodos.filter(todo => todo.assignee === assigneeFilter.value);
     }
 
     // 정렬
-    filteredTodos.sort((a, b) => {
-        switch (sortBy) {
-            case 'priority':
+    if (sortOrder) {
+        filteredTodos.sort((a, b) => {
+            if (sortOrder.value === 'priority') {
                 const priorityOrder = { high: 3, medium: 2, low: 1 };
                 return priorityOrder[b.priority] - priorityOrder[a.priority];
-            case 'dueDate':
-                return new Date(a.dueDate || '9999-12-31') - new Date(b.dueDate || '9999-12-31');
-            case 'assignee':
+            } else if (sortOrder.value === 'dueDate') {
+                return new Date(a.dueDate) - new Date(b.dueDate);
+            } else if (sortOrder.value === 'assignee') {
                 return (a.assignee || '').localeCompare(b.assignee || '');
-            default:
-                return 0;
-        }
-    });
+            }
+            return 0;
+        });
+    }
 
-    updateTodoList(projectId, filteredTodos);
+    updateTodoList(filteredTodos);
+    console.log('Filtered and sorted todos:', filteredTodos.length, 'items');
 }
 
 function updateAssigneeProgress(projectId) {
@@ -153,9 +156,10 @@ function searchTodos(projectId) {
     filterAndSortTodos(projectId);
 }
 
-function updateTodoList(projectId, filteredTodos) {
+function updateTodoList(filteredTodos) {
     const todoListElement = document.getElementById('todo-list');
     const priorityTodoListElement = document.getElementById('priority-todo-list');
+    const projectId = getCurrentProjectId();
     
     if (!todoListElement || !priorityTodoListElement) {
         console.error('Todo list elements not found');
@@ -174,8 +178,14 @@ function updateTodoList(projectId, filteredTodos) {
         priorityTodoListElement.innerHTML = '<p>우선 처리할 일이 없습니다.</p>';
     }
 
-    const table = createTodoTable(filteredTodos, projectId);
-    todoListElement.appendChild(table);
+    if (filteredTodos.length > 0) {
+        const table = createTodoTable(filteredTodos, projectId);
+        todoListElement.appendChild(table);
+    } else {
+        todoListElement.innerHTML = '<p>할 일이 없습니다.</p>';
+    }
+
+    console.log('Todo list updated:', filteredTodos.length, 'items');
 }
 
 function createTodoTable(todos, projectId) {
@@ -335,3 +345,22 @@ function getCurrentProjectId() {
     const projectDetailsTitle = document.getElementById('project-details-title');
     return projectDetailsTitle ? projectDetailsTitle.dataset.projectId : null;
 }
+
+function initializeTodoListeners() {
+    const priorityFilter = document.getElementById('filter-priority');
+    const assigneeFilter = document.getElementById('filter-assignee');
+    const sortOrder = document.getElementById('sort-by');
+
+    if (priorityFilter) {
+        priorityFilter.addEventListener('change', () => filterAndSortTodos(getCurrentProjectId()));
+    }
+    if (assigneeFilter) {
+        assigneeFilter.addEventListener('change', () => filterAndSortTodos(getCurrentProjectId()));
+    }
+    if (sortOrder) {
+        sortOrder.addEventListener('change', () => filterAndSortTodos(getCurrentProjectId()));
+    }
+}
+
+// 이 함수를 전역 스코프에 노출시킵니다.
+window.initializeTodoListeners = initializeTodoListeners;

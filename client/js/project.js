@@ -60,7 +60,7 @@ function updateProjectInUI(project) {
         }
     }
 
-    // 현재 보고 있는 프로젝트 상세 페이지 업데이트
+    // 현재 보고 는 프로젝트 상세 페이지 업데이트
     const currentProjectId = getCurrentProjectId();
     if (currentProjectId === project.id) {
         updateProjectDetailsView(project);
@@ -167,7 +167,14 @@ function showProjectDetails(projectId) {
 
     showProjectStatistics(projectId);
     updateAssigneeProgress(projectId);
-    filterAndSortTodos(projectId);
+    
+    // filterAndSortTodos를 setTimeout으로 감싸서 DOM이 업데이트된 후 실행되도록 합니다.
+    setTimeout(() => {
+        filterAndSortTodos(projectId);
+        if (typeof window.initializeTodoListeners === 'function') {
+            window.initializeTodoListeners();
+        }
+    }, 0);
 }
 
 function getCurrentProjectId() {
@@ -237,6 +244,11 @@ function addNewAssignee(projectId) {
             assigneeName: newAssigneeName
         }));
         document.getElementById('new-assignee-name').value = '';
+        
+        // 담당자 추가 후 할 일 목록 업데이트
+        setTimeout(() => {
+            filterAndSortTodos(projectId);
+        }, 100);
     }
 }
 
@@ -411,6 +423,11 @@ function addNewAssignee(projectId) {
             assigneeName: newAssigneeName
         }));
         document.getElementById('new-assignee-name').value = '';
+        
+        // 담당자 추가 후 할 일 목록 업데이트
+        setTimeout(() => {
+            filterAndSortTodos(projectId);
+        }, 100);
     }
 }
 

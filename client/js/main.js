@@ -53,17 +53,16 @@ function handleWebSocketMessage(data) {
             handleTodoChange(data);
             break;
         case 'ASSIGNEE_ADDED':
-        case 'ASSIGNEE_DELETED':
             if (!projectAssignees[data.projectId]) {
                 projectAssignees[data.projectId] = [];
             }
-            if (data.type === 'ASSIGNEE_ADDED') {
-                projectAssignees[data.projectId].push(data.assigneeName);
-            } else {
-                projectAssignees[data.projectId] = projectAssignees[data.projectId].filter(a => a !== data.assigneeName);
-            }
+            projectAssignees[data.projectId].push(data.assigneeName);
             updateAssigneeListInModal(data.projectId);
             updateAssigneeProgress(data.projectId);
+            // 담당자가 추가된 후 할 일 목록 업데이트
+            if (getCurrentProjectId() === data.projectId) {
+                filterAndSortTodos(data.projectId);
+            }
             break;
         case 'ASSIGNEE_DELETED':
             if (projectAssignees[data.projectId]) {
