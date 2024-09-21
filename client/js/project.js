@@ -170,7 +170,15 @@ function showProjectDetails(projectId) {
         }
     }, 0);
 
-    closeSidebar();
+    // 사이드바 닫기
+    const sidebar = document.querySelector('.sidebar');
+    const content = document.querySelector('.content');
+    if (sidebar && content) {
+        sidebar.classList.remove('open');
+        content.classList.remove('sidebar-open');
+        mainContent.style.marginLeft = '0';
+        mainContent.style.width = '100%';
+    }
 }
 
 function getCurrentProjectId() {

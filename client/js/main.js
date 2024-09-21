@@ -60,7 +60,7 @@ function initializeWebSocket() {
                 }
                 break;
             default:
-                console.log('알 �� 없는 메시지 타입');
+                console.log('알 수 없는 메시지 타입');
         }
     };
 
@@ -208,6 +208,13 @@ function toggleSidebar() {
     if (sidebar && content) {
         sidebar.classList.toggle('open');
         content.classList.toggle('sidebar-open');
+        if (content.classList.contains('sidebar-open')) {
+            content.style.marginLeft = '256px';
+            content.style.width = 'calc(100% - 256px)';
+        } else {
+            content.style.marginLeft = '0';
+            content.style.width = '100%';
+        }
         console.log('사이드바 상태:', sidebar.classList.contains('open') ? '열림' : '닫힘');
     } else {
         console.error('사이드바 또는 콘텐츠 요소를 찾을 수 없습니다.');
