@@ -360,22 +360,28 @@ button.delete-btn:hover {
 #priority-todo-list .todo-item:last-child {
     border-bottom: none;
 }
-
 /* 모바일 전용 레이아웃 */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
     main {
         padding: 0 1rem;
-        margin-top: 5rem;
+        margin-top: 4rem;
     }
 
     .header-content {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+    }
+
+    .logo {
+        width: 30px;
+        height: 30px;
+        margin-right: 10px;
     }
 
     header h1 {
         font-size: 1.2rem;
-        margin-top: 0.5rem;
+        margin: 0;
     }
 
     h2 {
@@ -414,6 +420,7 @@ button.delete-btn:hover {
         width: 100%;
         margin-bottom: 0.5rem;
         box-sizing: border-box;
+        font-size: 16px; /* 모바일에서 입력이 쉽도록 폰트 크기 조정 */
     }
 
     .todo-table {
@@ -441,6 +448,7 @@ button.delete-btn:hover {
     .project-buttons button {
         width: 100%;
         margin-top: 0.5rem;
+        padding: 0.75rem; /* 터치하기 쉽도록 버튼 크기 증가 */
     }
 
     #priority-todo-list {
@@ -459,7 +467,7 @@ button.delete-btn:hover {
 }
 
 /* 더 작은 화면을 위한 추가 스타일 */
-@media (max-width: 400px) {
+@media (max-width: 480px) {
     main {
         padding: 0 0.5rem;
     }
@@ -474,12 +482,34 @@ button.delete-btn:hover {
         right: 0.75rem;
         bottom: 0.75rem;
     }
+
+    .todo-table {
+        font-size: 0.8rem;
+    }
+
+    .todo-table th,
+    .todo-table td {
+        padding: 0.25rem;
+    }
+}
+
+/* 터치 기반 디바이스를 위한 최적화 */
+@media (hover: none) {
+    .project:hover,
+    .todo-item:hover,
+    .project-buttons button:hover {
+        box-shadow: none;
+    }
+
+    .project-buttons button:active {
+        background-color: var(--hover-color);
+    }
 }
 
 .project {
     position: relative;
     padding: 20px;
-    padding-bottom: 80px; /* 버튼을 위한 공간 추가 확보 */
+    padding-bottom: 80px;
     background-color: var(--card-bg-color);
     border: 1px solid var(--border-color);
     border-radius: 8px;
@@ -493,7 +523,7 @@ button.delete-btn:hover {
 }
 
 .project h3 {
-    margin: 0 0 20px 0; /* 제목 아래 여백 증가 */
+    margin: 0 0 20px 0;
     font-size: 1.2rem;
     font-weight: 500;
     color: var(--text-color);
@@ -504,7 +534,7 @@ button.delete-btn:hover {
     height: 20px;
     background-color: #30363d;
     border-radius: 10px;
-    margin-bottom: 25px; /* 진행률 바 아래 여백 증가 */
+    margin-bottom: 25px;
     position: relative;
     overflow: hidden;
 }
@@ -532,20 +562,20 @@ button.delete-btn:hover {
     flex-direction: row;
     justify-content: flex-end;
     gap: 10px;
-    width: calc(100% - 40px); /* 좌우 패딩 고려 */
-    margin-top: 15px; /* 버튼들 위에 마진 추가 */
+    width: calc(100% - 40px);
+    margin-top: 15px;
 }
 
 .project-buttons button {
-    margin-top: 0; /* 상단 마진 제거 */
+    margin-top: 0;
     font-size: 0.8rem;
     padding: 8px 12px;
 }
 
 #project-details-container {
     position: relative;
-    min-height: calc(100vh - 100px); /* 헤더와 마진을 고려한 높이 */
-    padding-bottom: 60px; /* 버튼 높이 + 여백 */
+    min-height: calc(100vh - 100px);
+    padding-bottom: 60px;
 }
 
 .todo-table td:last-child {
@@ -559,7 +589,6 @@ button.delete-btn:hover {
     vertical-align: middle;
 }
 
-/* 체크박스, 선택 메뉴, 날짜 입력 필드의 높이와 정렬을 조정합니다 */
 .todo-table input[type="checkbox"],
 .todo-table select,
 .todo-table input[type="date"] {
@@ -567,7 +596,6 @@ button.delete-btn:hover {
     vertical-align: middle;
 }
 
-/* 텍스트 내용의 수직 정렬을 조정합니다 */
 .todo-table .todo-text {
     vertical-align: middle;
     display: inline-block;

@@ -5,7 +5,7 @@ let projectAssignees = {};
 
 function initializeWebSocket() {
     console.log('WebSocket 연결 시도...');
-    socket = new WebSocket('ws://localhost:3000');
+    socket = new WebSocket('ws:/110.15.29.199:3000');
 
     socket.onopen = () => {
         console.log('WebSocket이 연결되었습니다.');
