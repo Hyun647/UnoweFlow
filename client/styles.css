@@ -1,12 +1,12 @@
 :root {
-    --bg-color: #ffffff;
-    --text-color: #262626;
-    --primary-color: #0095f6;
-    --secondary-color: #00376b;
-    --border-color: #dbdbdb;
-    --card-bg-color: #ffffff;
-    --error-color: #ed4956;
-    --success-color: #2ecc71;
+    --bg-color: #0d1117;
+    --text-color: #c9d1d9;
+    --primary-color: #58a6ff;
+    --secondary-color: #8b949e;
+    --border-color: #30363d;
+    --card-bg-color: #161b22;
+    --error-color: #f85149;
+    --success-color: #2ea043;
 }
 
 body {
@@ -72,9 +72,9 @@ input[type="text"], input[type="date"], select {
 }
 
 button {
-    background-color: transparent;
-    border: 1px solid #ccc;
-    color: #333;
+    background-color: #21262d;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
     padding: 5px 10px;
     font-size: 0.8rem;
     border-radius: 4px;
@@ -83,16 +83,16 @@ button {
 }
 
 button:hover {
-    background-color: #f0f0f0;
+    background-color: #30363d;
 }
 
 button.delete-btn {
-    color: #d32f2f;
-    border-color: #d32f2f;
+    color: var(--error-color);
+    border-color: var(--error-color);
 }
 
 button.delete-btn:hover {
-    background-color: #ffebee;
+    background-color: rgba(248, 81, 73, 0.1);
 }
 
 #project-list, #todo-list {
@@ -110,14 +110,14 @@ button.delete-btn:hover {
 }
 
 .project:hover, .todo-item:hover {
-    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 5px rgba(255, 255, 255, 0.1);
 }
 
 .project h3 {
     margin: 0 0 15px 0;
     font-size: 1.2rem;
     font-weight: 500;
-    color: #333;
+    color: var(--text-color);
 }
 
 .progress-circle {
@@ -155,7 +155,7 @@ button.delete-btn:hover {
 
 .progress-bar-container {
     height: 6px;
-    background-color: #f0f0f0;
+    background-color: #30363d;
     border-radius: 3px;
     overflow: hidden;
     margin-bottom: 20px; /* 진행률 바와 버튼 사이 간격 추가 */
@@ -163,13 +163,13 @@ button.delete-btn:hover {
 
 .progress-bar {
     height: 100%;
-    background-color: #4CAF50;
+    background-color: var(--success-color);
     transition: width 0.5s ease-in-out;
 }
 
 .progress-text {
     font-size: 0.9rem;
-    color: #666;
+    color: var(--secondary-color);
     margin-bottom: 15px;
 }
 
@@ -274,14 +274,14 @@ button.delete-btn:hover {
 
 .assignee-progress .progress-bar-container {
     height: 10px;
-    background-color: #f0f0f0;
+    background-color: #30363d;
     border-radius: 5px;
     overflow: hidden;
 }
 
 .assignee-progress .progress-bar {
     height: 100%;
-    background-color: #4CAF50;
+    background-color: var(--success-color);
     transition: width 0.5s ease-in-out;
 }
 
@@ -313,7 +313,7 @@ button.delete-btn:hover {
 }
 
 .todo-table tr:hover {
-    background-color: rgba(0, 0, 0, 0.02);
+    background-color: rgba(255, 255, 255, 0.03);
 }
 
 #project-form {
@@ -343,7 +343,7 @@ button.delete-btn:hover {
 }
 
 #priority-todo-list {
-    background-color: rgba(237, 73, 86, 0.1);
+    background-color: rgba(248, 81, 73, 0.1);
     border: 1px solid var(--border-color);
     border-radius: 3px;
     padding: 1rem;
@@ -430,17 +430,17 @@ button.delete-btn:hover {
     position: relative;
     padding-bottom: 10px; /* 버튼을 위한 공간 확보 */
     min-height: 80px; /* 프로젝트 박스의 최소 높이 설정 */
-    background-color: #ffffff;
-    border: 1px solid #e0e0e0;
+    background-color: var(--card-bg-color);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 20px;
     margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     transition: box-shadow 0.3s ease;
 }
 
 .project:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .project-buttons {
@@ -460,7 +460,7 @@ button.delete-btn:hover {
 .project-progress-bar-container {
     width: 100%;
     height: 20px;
-    background-color: #f0f0f0;
+    background-color: #30363d;
     border-radius: 10px;
     margin-bottom: 15px;
     position: relative;
@@ -469,7 +469,7 @@ button.delete-btn:hover {
 
 .project-progress-bar {
     height: 100%;
-    background-color: #4CAF50;
+    background-color: var(--success-color);
     border-radius: 10px;
     transition: width 0.5s ease-in-out;
 }
@@ -479,7 +479,7 @@ button.delete-btn:hover {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: #000;
+    color: var(--text-color);
     font-weight: bold;
 }
 
