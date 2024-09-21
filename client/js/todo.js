@@ -55,12 +55,25 @@ function updateTodo(projectId, updatedTodo) {
     }));
 }
 
-function filterAndSortTodos(projectId) {
+function searchTodos(projectId) {
+    const searchTerm = document.getElementById('todo-search').value.toLowerCase();
+    filterAndSortTodos(projectId, searchTerm);
+}
+
+function filterAndSortTodos(projectId, searchTerm = '') {
     const priorityFilter = document.getElementById('filter-priority');
     const assigneeFilter = document.getElementById('filter-assignee');
     const sortOrder = document.getElementById('sort-by');
 
     let filteredTodos = todos[projectId] || [];
+
+    // 검색어 필터링
+    if (searchTerm) {
+        filteredTodos = filteredTodos.filter(todo => 
+            todo.text.toLowerCase().includes(searchTerm) ||
+            (todo.assignee && todo.assignee.toLowerCase().includes(searchTerm))
+        );
+    }
 
     // 우선순위 필터링
     if (priorityFilter && priorityFilter.value !== 'all') {
@@ -150,10 +163,6 @@ function showProjectStatistics(projectId) {
         type: 'UPDATE_PROJECT',
         project: { id: projectId, progress: project.progress }
     }));
-}
-
-function searchTodos(projectId) {
-    filterAndSortTodos(projectId);
 }
 
 function updateTodoList(filteredTodos) {

@@ -175,6 +175,12 @@ function showProjectDetails(projectId) {
             window.initializeTodoListeners();
         }
     }, 0);
+
+    // 검색 입력 필드에 이벤트 리스너 추가
+    const searchInput = document.getElementById('todo-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', () => searchTodos(projectId));
+    }
 }
 
 function getCurrentProjectId() {
