@@ -20,15 +20,6 @@ body {
     background-color: var(--bg-color);
     color: var(--text-color);
     overflow-x: hidden; /* 가로 스크롤 방지 */
-    touch-action: manipulation;
-    -webkit-text-size-adjust: 100%;
-    -ms-text-size-adjust: 100%;
-}
-
-@media screen and (max-width: 768px) {
-    body {
-        font-size: 16px; /* 모바일에서 기본 글꼴 크기 설정 */
-    }
 }
 
 .container {
@@ -258,9 +249,6 @@ h2 {
     border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 20px;
-    width: 100%; /* 너비를 100%로 고정 */
-    box-sizing: border-box; /* padding을 너비에 포함 */
-    overflow-x: auto; /* 필요한 경우 가로 스크롤 허용 */
 }
 
 .todo-header {
@@ -304,7 +292,6 @@ h2 {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0 10px;
-    table-layout: fixed; /* 테이블 레이아웃을 고정 */
 }
 
 .todo-table th,
@@ -312,25 +299,7 @@ h2 {
     padding: 12px;
     text-align: left;
     border: none;
-    white-space: nowrap; /* 텍스트 줄바꿈 방지 */
-    overflow: hidden;
-    text-overflow: ellipsis; /* 긴 텍스트는 말줄임표로 표시 */
 }
-
-/* 각 열의 너비 지정 */
-.todo-table th:nth-child(1),
-.todo-table td:nth-child(1) { width: 5%; } /* 완료 체크박스 */
-.todo-table th:nth-child(2),
-.todo-table td:nth-child(2) { width: 30%; } /* 내용 */
-.todo-table th:nth-child(3),
-.todo-table td:nth-child(3) { width: 15%; } /* 담당자 */
-.todo-table th:nth-child(4),
-.todo-table td:nth-child(4) { width: 10%; } /* 우선순위 */
-.todo-table th:nth-child(5),
-.todo-table td:nth-child(5) { width: 15%; } /* 마감일 */
-.todo-table th:nth-child(6),
-.todo-table td:nth-child(6) { width: 25%; } /* 작업 버튼 */
-
 
 .todo-table tr {
     background-color: var(--card-bg-color);
@@ -740,7 +709,7 @@ textarea:focus {
     color: var(--text-color);
 }
 
-/* 할 일 입력 및 터 스타일 수정 */
+/* 할 일 입력 및 ���터 스타일 수정 */
 #todo-input, .todo-filters {
     display: flex;
     flex-wrap: wrap;

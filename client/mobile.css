@@ -21,8 +21,8 @@
         left: 0;
         right: 0;
         z-index: 1000;
-        height: 60px;
-        box-sizing: border-box;
+        height: 60px; /* 헤더의 높이를 명시적으로 지정 */
+        box-sizing: border-box; /* padding을 높이에 포함 */
     }
 
     .header-content {
@@ -53,6 +53,8 @@
         font-size: 16px;
         margin-top: 10px;
     }
+
+    /* 기존의 다른 스타일들은 유지 */
 
     /* 사이드바 스타일 */
     .sidebar {
@@ -120,18 +122,6 @@
     .todo-table td {
         padding: 8px;
     }
-
-    /* 모바일에서는 열 너비를 조정할 수 있습니다 */
-    .todo-table th:nth-child(2),
-    .todo-table td:nth-child(2) { width: 40%; } /* 내용 */
-    .todo-table th:nth-child(3),
-    .todo-table td:nth-child(3) { width: 20%; } /* 담당자 */
-    .todo-table th:nth-child(4),
-    .todo-table td:nth-child(4) { width: 15%; } /* 우선순위 */
-    .todo-table th:nth-child(5),
-    .todo-table td:nth-child(5) { width: 25%; } /* 마감일 */
-    .todo-table th:nth-child(6),
-    .todo-table td:nth-child(6) { width: auto; } /* 작업 버튼 */
 
     /* 버튼 스타일 */
     button, .button {
@@ -209,4 +199,6 @@
     .full-width-button {
         width: 100%;
     }
+
+    /* 나머지 기존 스타일 유지 */
 }
