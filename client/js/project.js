@@ -35,22 +35,9 @@ function renameProject(projectId) {
 }
 
 function updateProjectInUI(project) {
-    
     // 프로젝트 목록에서 프로젝트 업데이트
-    const projectIndex = projects.findIndex(p => p.id === project.id);
-    if (projectIndex !== -1) {
-        projects[projectIndex] = {...projects[projectIndex], ...project};
-    } else {
-        projects.push(project);
-    }
-
-    // 프로젝트 요소 업데이트
     const projectElement = document.getElementById(`project-${project.id}`);
     if (projectElement) {
-        const projectNameElement = projectElement.querySelector('.project-name');
-        if (projectNameElement) {
-            projectNameElement.textContent = project.name || '이름 없음';
-        }
         const progressBar = projectElement.querySelector('.progress-bar');
         const progressText = projectElement.querySelector('.progress-text');
         if (progressBar && progressText) {
@@ -60,16 +47,16 @@ function updateProjectInUI(project) {
         }
     }
 
-    // 현재 보고 는 프로젝트 상세 페이지 업데이트
-    const currentProjectId = getCurrentProjectId();
-    if (currentProjectId === project.id) {
-        updateProjectDetailsView(project);
-    }
-
-    // 프로젝트 목록 페이지에 있을 경우에만 updateProjectList 호출
-    const projectList = document.getElementById('project-list');
-    if (projectList) {
-        updateProjectList();
+    // 프로젝트 상세 페이지 업데이트
+    const projectStatistics = document.getElementById('project-statistics');
+    if (projectStatistics) {
+        const progressBar = projectStatistics.querySelector('.project-progress-bar');
+        const progressText = projectStatistics.querySelector('.project-progress-text');
+        if (progressBar && progressText) {
+            const progress = project.progress || 0;
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `${progress}%`;
+        }
     }
 }
 
@@ -108,79 +95,82 @@ function handleProjectChange(data) {
 }
 
 function showProjectDetails(projectId) {
-    const mainContent = document.getElementById('main-content');
-    if (!mainContent) {
-        console.error('main-content 요소를 찾을 수 없습니다.');
-        return;
-    }
     const project = projects.find(p => p.id === projectId);
     if (!project) {
-        console.error('Project not found:', projectId);
+        console.error('프로젝트를 찾을 수 없습니다:', projectId);
         return;
     }
 
+    currentProject = project;
+    const mainContent = document.getElementById('main-content');
     mainContent.innerHTML = `
         <div id="project-details-container">
-            <h2 id="project-details-title" data-project-id="${projectId}">${project.name || '이름 없음'} 상세</h2>
-            <div id="project-statistics"></div>
-            <div id="assignee-progress"></div>
-            <button onclick="showManageAssigneesModal('${projectId}')">담당자 관리</button>
-            <div id="todo-filters">
-                <select id="filter-priority" onchange="filterAndSortTodos('${projectId}')">
-                    <option value="all">모든 우선순위</option>
-                    <option value="high">높음</option>
-                    <option value="medium">중간</option>
-                    <option value="low">낮음</option>
-                </select>
-                <select id="filter-assignee" onchange="filterAndSortTodos('${projectId}')">
-                    <option value="all">모든 담당자</option>
-                    ${getAssigneeOptions(projectId)}
-                </select>
-                <select id="sort-by" onchange="filterAndSortTodos('${projectId}')">
-                    <option value="priority">우선순위순</option>
-                    <option value="dueDate">마감일순</option>
-                    <option value="assignee">담당자순</option>
-                </select>
+            <div class="project-header">
+                <h2 id="project-details-title" data-project-id="${project.id}">${project.name || '이름 없음'}</h2>
+                <div class="project-actions">
+                    <button onclick="showMemo('${project.id}')" class="button">메모장</button>
+                    <button onclick="showManageAssigneesModal('${project.id}')" class="button">담당자 관리</button>
+                </div>
             </div>
-            <div id="todo-input">
-                <input type="text" id="new-todo-text" placeholder="새 할 일">
-                <select id="new-todo-assignee">
-                    <option value="">담당자 없음</option>
-                    ${getAssigneeOptions(projectId)}
-                </select>
-                <select id="new-todo-priority">
-                    <option value="low">낮음</option>
-                    <option value="medium">중간</option>
-                    <option value="high">높음</option>
-                </select>
-                <input type="date" id="new-todo-due-date">
-                <button onclick="addTodo('${projectId}')">할 일 추가</button>
+            <div class="project-stats">
+                <div id="project-statistics"></div>
+                <div id="assignee-progress"></div>
             </div>
-            <input type="text" id="todo-search" placeholder="할 일 검색" onkeyup="searchTodos('${projectId}')">
-            <h3>우선 처리할 일</h3>
-            <div id="priority-todo-list"></div>
-            <h3>전체 할 일 목록</h3>
-            <div id="todo-list"></div>
-            <button onclick="showProjectList()">프로젝트 목록으로 돌아가기</button>
+            <div class="todo-section">
+                <div class="todo-header">
+                    <h3>할 일 목록</h3>
+                    <div class="todo-filters">
+                        <select id="filter-priority" onchange="filterAndSortTodos('${project.id}')">
+                            <option value="all">모든 우선순위</option>
+                            <option value="high">높음</option>
+                            <option value="medium">중간</option>
+                            <option value="low">낮음</option>
+                        </select>
+                        <select id="filter-assignee" onchange="filterAndSortTodos('${project.id}')">
+                            <option value="all">모든 담당자</option>
+                            ${getAssigneeOptions(project.id)}
+                        </select>
+                        <select id="sort-by" onchange="filterAndSortTodos('${project.id}')">
+                            <option value="priority">우선순위순</option>
+                            <option value="dueDate">마감일순</option>
+                            <option value="assignee">담당자순</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="todo-input">
+                    <input type="text" id="new-todo-text" placeholder="새 할 일">
+                    <select id="new-todo-assignee">
+                        <option value="">담당자 없음</option>
+                        ${getAssigneeOptions(project.id)}
+                    </select>
+                    <select id="new-todo-priority">
+                        <option value="low">낮음</option>
+                        <option value="medium">중간</option>
+                        <option value="high">높음</option>
+                    </select>
+                    <input type="date" id="new-todo-due-date">
+                    <button onclick="addTodo('${project.id}')" class="button">추가</button>
+                </div>
+                <input type="text" id="todo-search" placeholder="할 일 검색" onkeyup="searchTodos('${project.id}')">
+                <h4>먼저 처리할 할 일 목록</h4>
+                <div id="priority-todo-list"></div>
+                <h4>전체 할 일 목록</h4>
+                <div id="todo-list"></div>
+            </div>
         </div>
     `;
 
-    showProjectStatistics(projectId);
-    updateAssigneeProgress(projectId);
+    showProjectStatistics(project.id);
+    updateAssigneeProgress(project.id);
     
-    // filterAndSortTodos를 setTimeout으로 감싸서 DOM이 업데이트된 후 실행되도록 합니다.
     setTimeout(() => {
-        filterAndSortTodos(projectId);
+        filterAndSortTodos(project.id);
         if (typeof window.initializeTodoListeners === 'function') {
             window.initializeTodoListeners();
         }
     }, 0);
 
-    // 검색 입력 필드에 이벤트 리스너 추가
-    const searchInput = document.getElementById('todo-search');
-    if (searchInput) {
-        searchInput.addEventListener('input', () => searchTodos(projectId));
-    }
+    closeSidebar();
 }
 
 function getCurrentProjectId() {
@@ -209,7 +199,7 @@ function showManageAssigneesModal(projectId) {
         assigneeListHTML += `
             <li>
                 ${assignee}
-                <button onclick="deleteAssignee('${projectId}', '${assignee}')">삭제</button>
+                <button onclick="deleteAssignee('${projectId}', '${assignee}')" class="delete-btn">삭제</button>
             </li>
         `;
     });
@@ -220,9 +210,11 @@ function showManageAssigneesModal(projectId) {
             <ul id="assignee-list">
                 ${assigneeListHTML}
             </ul>
-            <input type="text" id="new-assignee-name" placeholder="담당자 이름">
-            <button onclick="addNewAssignee('${projectId}')">담당자 추가</button>
-            <button onclick="closeModal()">닫기</button>
+            <div class="add-assignee-form">
+                <input type="text" id="new-assignee-name" placeholder="담당자 이름">
+                <button onclick="addNewAssignee('${projectId}')">담당자 추가</button>
+            </div>
+            <button onclick="closeModal()" class="close-btn">닫기</button>
         </div>
     `;
     document.body.appendChild(modal);
@@ -278,7 +270,7 @@ function updateAssigneeListInModal(projectId) {
         assigneeListHTML += `
             <li>
                 ${assignee}
-                <button onclick="deleteAssignee('${projectId}', '${assignee}')">삭제</button>
+                <button onclick="deleteAssignee('${projectId}', '${assignee}')" class="delete-btn">삭제</button>
             </li>
         `;
     });
@@ -320,181 +312,15 @@ function filterAndSortTodos(projectId) {
     }
 }
 
-function updateTodoPriority(todoId, priority) {
-    const updatedTodo = { id: todoId, priority };
-    socket.send(JSON.stringify({
-        type: 'UPDATE_TODO',
-        todo: updatedTodo
-    }));
-    updateTodoInUI(updatedTodo);
-}
-
-function updateTodoInUI(updatedTodo) {
-    const todoRow = document.querySelector(`#todo-list tr[data-todo-id="${updatedTodo.id}"]`);
-    if (todoRow) {
-        const statusCell = todoRow.querySelector('td:nth-child(5)');
-        const priorityButtons = todoRow.querySelectorAll('td:nth-child(6) button');
-
-        if (statusCell) {
-            statusCell.textContent = updatedTodo.completed ? '완료' : '미완료';
-        }
-
-        priorityButtons.forEach(button => {
-            button.classList.remove('active');
-            if (button.textContent.includes(updatedTodo.priority)) {
-                button.classList.add('active');
-            }
-        });
-    }
-}
-
-function addTodo(projectId) {
-    const newTodoText = document.getElementById('new-todo-text').value.trim();
-    const newTodoAssignee = document.getElementById('new-todo-assignee').value;
-    const newTodoPriority = document.getElementById('new-todo-priority').value;
-    const newTodoDueDate = document.getElementById('new-todo-due-date').value;
-
-    if (newTodoText) {
-        const newTodo = {
-            text: newTodoText,
-            assignee: newTodoAssignee,
-            priority: newTodoPriority,
-            dueDate: newTodoDueDate,
-            completed: false
-        };
-
-        socket.send(JSON.stringify({
-            type: 'ADD_TODO',
-            projectId: projectId,
-            todo: newTodo
-        }));
-
-        document.getElementById('new-todo-text').value = '';
-        document.getElementById('new-todo-assignee').value = '';
-        document.getElementById('new-todo-priority').value = 'low';
-        document.getElementById('new-todo-due-date').value = '';
-    } else {
-        alert('할 일을 입력해주세요.');
-    }
-}
-
-function showManageAssigneesModal(projectId) {
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    const assignees = getAssignees(projectId);
-    
-    let assigneeListHTML = '';
-    assignees.forEach(assignee => {
-        assigneeListHTML += `
-            <li>
-                ${assignee}
-                <button onclick="deleteAssignee('${projectId}', '${assignee}')">삭제</button>
-            </li>
-        `;
-    });
-
-    modal.innerHTML = `
-        <div class="modal-content">
-            <h3>담당자 관리</h3>
-            <ul id="assignee-list">
-                ${assigneeListHTML}
-            </ul>
-            <input type="text" id="new-assignee-name" placeholder="담당자 이름">
-            <button onclick="addNewAssignee('${projectId}')">담당자 추가</button>
-            <button onclick="closeModal()">닫기</button>
-        </div>
-    `;
-    document.body.appendChild(modal);
-
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            closeModal();
-        }
-    });
-}
-
-function closeModal() {
-    const modal = document.querySelector('.modal');
-    if (modal) {
-        modal.remove();
-    }
-}
-
-function addNewAssignee(projectId) {
-    const newAssigneeName = document.getElementById('new-assignee-name').value.trim();
-    if (newAssigneeName) {
-        socket.send(JSON.stringify({
-            type: 'ADD_ASSIGNEE',
-            projectId: projectId,
-            assigneeName: newAssigneeName
-        }));
-        document.getElementById('new-assignee-name').value = '';
-        
-        // 담당자 추가 후 할 일 목록 업데이트
-        setTimeout(() => {
-            filterAndSortTodos(projectId);
-        }, 100);
-    }
-}
-
-function deleteAssignee(projectId, assigneeName) {
-    if (confirm(`정말로 ${assigneeName}을(를) 삭제하시겠습니까? 이 담당자의 모든 할 일이 '담당자 없음'으로 변경됩니다.`)) {
-        socket.send(JSON.stringify({
-            type: 'DELETE_ASSIGNEE',
-            projectId: projectId,
-            assigneeName: assigneeName
-        }));
-        removeAssigneeFromTodos(projectId, assigneeName);
-    }
-}
-
-function updateAssigneeListInModal(projectId) {
-    const assigneeList = document.getElementById('assignee-list');
-    const assignees = getAssignees(projectId);
-    
-    let assigneeListHTML = '';
-    assignees.forEach(assignee => {
-        assigneeListHTML += `
-            <li>
-                ${assignee}
-                <button onclick="deleteAssignee('${projectId}', '${assignee}')">삭제</button>
-            </li>
-        `;
-    });
-    
-    if (assigneeList) {
-        assigneeList.innerHTML = assigneeListHTML;
-    }
-
-    // 할 일 목록의 담당자 선택 옵션도 업데이트
-    updateTodoAssigneeOptions(projectId);
-    
-    // 작업률 창 업데이트
-    updateAssigneeProgress(projectId);
-}
-
-function updateTodoAssigneeOptions(projectId) {
-    const assigneeSelects = document.querySelectorAll('.todo-assignee');
-    const newAssigneeOptions = getAssigneeOptions(projectId);
-    assigneeSelects.forEach(select => {
-        const currentValue = select.value;
-        select.innerHTML = `<option value="">담당자 없음</option>${newAssigneeOptions}`;
-        select.value = currentValue;
-    });
-
-    // 새 할 일 입력 폼의 담당자 선택 옵션도 업데이트
-    const newTodoAssigneeSelect = document.getElementById('new-todo-assignee');
-    if (newTodoAssigneeSelect) {
-        newTodoAssigneeSelect.innerHTML = `<option value="">담당자 없음</option>${newAssigneeOptions}`;
-    }
-}
-
-function filterAndSortTodos(projectId) {
-    // 이 함수의 구현은 todo.js 파일에 있어야 합니다.
-    // 여기서는 todo.js의 함수를 호출하는 형태로 구현합니다.
-    if (typeof window.filterAndSortTodos === 'function') {
-        window.filterAndSortTodos(projectId);
-    } else {
-        console.error('filterAndSortTodos 함수를 찾을 수 없습니다.');
-    }
-}
+// 전역 스코프에 함수 노출
+window.showProjectDetails = showProjectDetails;
+window.renameProject = renameProject;
+window.deleteProject = deleteProject;
+window.showManageAssigneesModal = showManageAssigneesModal;
+window.closeModal = closeModal;
+window.addNewAssignee = addNewAssignee;
+window.deleteAssignee = deleteAssignee;
+window.updateAssigneeListInModal = updateAssigneeListInModal;
+window.updateTodoAssigneeOptions = updateTodoAssigneeOptions;
+window.getAssigneeOptions = getAssigneeOptions;
+window.getAssignees = getAssignees;

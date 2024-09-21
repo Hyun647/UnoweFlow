@@ -133,6 +133,11 @@ function updateAssigneeProgress(projectId) {
 
 function showProjectStatistics(projectId) {
     const project = projects.find(p => p.id === projectId);
+    if (!project) {
+        console.error('프로젝트를 찾을 수 없습니다:', projectId);
+        return;
+    }
+
     const projectTodos = todos[projectId] || [];
     const totalTodos = projectTodos.length;
     const completedTodos = projectTodos.filter(todo => todo.completed).length;

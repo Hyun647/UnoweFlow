@@ -19,6 +19,7 @@ app.use(express.json());
 let projects = [];
 let todos = {};
 let projectAssignees = {};
+const memos = {};
 
 // WebSocket 연결 설정
 wss.on('connection', (ws) => {
@@ -70,6 +71,21 @@ wss.on('connection', (ws) => {
                 break;
             case 'DELETE_ASSIGNEE':
                 deleteAssignee(data.projectId, data.assigneeName);
+                break;
+            case 'GET_MEMO':
+                ws.send(JSON.stringify({
+                    type: 'MEMO_UPDATE',
+                    projectId: data.projectId,
+                    content: memos[data.projectId] || ''
+                }));
+                break;
+            case 'UPDATE_MEMO':
+                memos[data.projectId] = data.content;
+                broadcastToAll(JSON.stringify({
+                    type: 'MEMO_UPDATE',
+                    projectId: data.projectId,
+                    content: data.content
+                }));
                 break;
         }
     });
@@ -147,13 +163,12 @@ function updateProjectProgress(projectId) {
 }
 
 function broadcastToAll(message) {
-    const messageString = JSON.stringify(message);
-    wss.clients.forEach(client => {
+    const messageString = typeof message === 'string' ? message : JSON.stringify(message);
+    wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
             client.send(messageString);
         }
     });
-    console.log('브로드캐스트 메시지:', messageString);  // 디버깅을 위한 로그
 }
 
 function addAssignee(projectId, assigneeName) {

@@ -15,7 +15,53 @@ function initializeWebSocket() {
     socket.onmessage = (event) => {
         console.log('WebSocket 메시지 수신');
         const data = JSON.parse(event.data);
-        handleWebSocketMessage(data);
+        switch (data.type) {
+            case 'FULL_STATE_UPDATE':
+                projects = data.projects;
+                todos = data.todos;
+                projectAssignees = data.projectAssignees || {};
+                if (document.getElementById('project-list')) {
+                    updateProjectList();
+                }
+                break;
+            case 'PROJECT_ADDED':
+            case 'PROJECT_UPDATED':
+            case 'PROJECT_DELETED':
+                handleProjectChange(data);
+                break;
+            case 'TODO_ADDED':
+            case 'TODO_UPDATED':
+            case 'TODO_DELETED':
+                handleTodoChange(data);
+                break;
+            case 'ASSIGNEE_ADDED':
+                if (!projectAssignees[data.projectId]) {
+                    projectAssignees[data.projectId] = [];
+                }
+                projectAssignees[data.projectId].push(data.assigneeName);
+                updateAssigneeListInModal(data.projectId);
+                updateAssigneeProgress(data.projectId);
+                // 담당자가 추가된 후 할 일 목록 업데이트
+                if (getCurrentProjectId() === data.projectId) {
+                    filterAndSortTodos(data.projectId);
+                }
+                break;
+            case 'ASSIGNEE_DELETED':
+                if (projectAssignees[data.projectId]) {
+                    projectAssignees[data.projectId] = projectAssignees[data.projectId].filter(a => a !== data.assigneeName);
+                }
+                updateAssigneeListInModal(data.projectId);
+                updateAssigneeProgress(data.projectId);
+                removeAssigneeFromTodos(data.projectId, data.assigneeName);
+                break;
+            case 'MEMO_UPDATE':
+                if (typeof handleMemoUpdate === 'function') {
+                    handleMemoUpdate(data);
+                }
+                break;
+            default:
+                console.log('알 �� 없는 메시지 타입');
+        }
     };
 
     socket.onclose = (event) => {
@@ -105,10 +151,28 @@ function removeAssigneeFromTodos(projectId, assigneeName) {
     }
 }
 
-// 페이지 로드 시 WebSocket 연결 초화
+// 페이지 로드 시 WebSocket 연결 초기화 및 이벤트 리스너 추가
 window.addEventListener('load', () => {
     initializeWebSocket();
     showProjectList();  // 초기 화면으로 프로젝트 목록 표시
+    
+    // 햄버거 메뉴 클릭 이벤트 리스너 추가
+    const hamburgerMenu = document.querySelector('.hamburger-menu');
+    if (hamburgerMenu) {
+        hamburgerMenu.addEventListener('click', toggleSidebar);
+        console.log('햄버거 메뉴 이벤트 리스너 추가됨');
+    } else {
+        console.error('햄버거 메뉴 요소를 찾을 수 없습니다.');
+    }
+
+    // 프로젝트 검색 이벤트 리스너 추가
+    const projectSearch = document.getElementById('project-search');
+    if (projectSearch) {
+        projectSearch.addEventListener('input', searchProjects);
+        console.log('프로젝트 검색 이벤트 리스너 추가됨');
+    } else {
+        console.error('프로젝트 검색 요소를 찾을 수 없습니다.');
+    }
 });
 
 // 전역 스코프에서 필요한 함수들을 정의하거나 다른 파일에서 가져옵니다.
@@ -136,3 +200,31 @@ function updateProjectInUI(project) {
         updateProjectList();
     }
 }
+
+function toggleSidebar() {
+    console.log('toggleSidebar 함수 호출됨');
+    const sidebar = document.querySelector('.sidebar');
+    const content = document.querySelector('.content');
+    if (sidebar && content) {
+        sidebar.classList.toggle('open');
+        content.classList.toggle('sidebar-open');
+        console.log('사이드바 상태:', sidebar.classList.contains('open') ? '열림' : '닫힘');
+    } else {
+        console.error('사이드바 또는 콘텐츠 요소를 찾을 수 없습니다.');
+    }
+}
+
+// 전역 스코프에 노출
+window.toggleSidebar = toggleSidebar;
+
+function closeSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const content = document.querySelector('.content');
+    if (sidebar && content) {
+        sidebar.classList.remove('open');
+        content.classList.remove('sidebar-open');
+    }
+}
+
+// 전역 스코프에 노출
+window.closeSidebar = closeSidebar;
