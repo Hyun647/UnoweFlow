@@ -26,13 +26,7 @@ function showMemo(projectId) {
     `;
     loadMemo(projectId);
 
-    // 사이드바 닫기
-    const sidebar = document.querySelector('.sidebar');
-    const content = document.querySelector('.content');
-    sidebar.classList.remove('open');
-    content.classList.remove('sidebar-open');
-
-    // 새로운 스타일 적용
+    closeSidebar();
     applyMemoStyles();
     
     // 에디터를 숨기고 컨텐츠 컨테이너를 전체 너비로 설정
@@ -70,12 +64,12 @@ function applyMemoStyles() {
     memoEditor.style.flex = '1';
     memoEditor.style.display = 'none'; // 기본적으로 숨김 상태로 설정
 
-    memoTextarea.style.flexGrow = '1';
+    memoTextarea.style.width = '100%';
+    memoTextarea.style.height = '100%';
     memoTextarea.style.resize = 'none';
     memoTextarea.style.padding = '10px';
     memoTextarea.style.fontSize = '16px';
     memoTextarea.style.lineHeight = '1.5';
-    memoTextarea.style.width = '100%';
 
     contentContainer.style.flex = '1';
     contentContainer.style.overflow = 'auto';
@@ -93,18 +87,19 @@ function toggleEditor() {
     isEditorVisible = !isEditorVisible;
     
     if (isEditorVisible) {
-        memoEditor.style.display = 'flex';
-        memoEditor.style.flex = '1';
-        contentContainer.style.flex = '1';
+        memoEditor.style.display = 'block';
+        memoEditor.style.height = '50%';
+        contentContainer.style.height = '50%';
         toggleButton.textContent = '에디터 숨기기';
     } else {
         memoEditor.style.display = 'none';
-        contentContainer.style.flex = '1';
+        contentContainer.style.height = '100%';
         toggleButton.textContent = '에디터 보이기';
     }
 }
 
 function loadMemo(projectId) {
+    console.log('메모 로드 요청:', projectId);
     socket.send(JSON.stringify({
         type: 'GET_MEMO',
         projectId: projectId
@@ -112,27 +107,34 @@ function loadMemo(projectId) {
 }
 
 function updateMemo(content) {
+    console.log('메모 업데이트:', content);
     const memoTextarea = document.getElementById('memo');
     const contentContainer = document.getElementById('content-container');
     if (memoTextarea && contentContainer) {
         memoTextarea.value = content;
         renderContent(content);
+    } else {
+        console.error('메모 텍스트 영역 또는 컨텐츠 컨테이너를 찾을 수 없습니다.');
     }
 }
 
 function saveMemo() {
     const memoTextarea = document.getElementById('memo');
     const content = memoTextarea.value;
+    console.log('메모 저장 시도:', content);
     if (currentProjectId) {
         socket.send(JSON.stringify({
             type: 'UPDATE_MEMO',
             projectId: currentProjectId,
             content: content
         }));
+    } else {
+        console.error('현재 프로젝트 ID가 없습니다.');
     }
 }
 
 function renderContent(content) {
+    console.log('메모 렌더링:', content);
     const contentContainer = document.getElementById('content-container');
     const html = marked.parse(content);
     contentContainer.innerHTML = html;
@@ -144,15 +146,17 @@ document.addEventListener('input', function(e) {
         clearTimeout(e.target.timeout);
         e.target.timeout = setTimeout(() => {
             saveMemo();
-            renderContent(e.target.value);
-        }, 300); // 타이핑 후 300ms 후에 저장 및 렌더링
+        }, 300); // 타이핑 후 300ms 후에 저장
     }
 });
 
 // 서버로부터 메모 업데이트 처리
 function handleMemoUpdate(data) {
+    console.log('서버로부터 메모 업데이트 수신:', data);
     if (data.projectId === currentProjectId) {
         updateMemo(data.content);
+    } else {
+        console.log('현재 프로젝트와 일치하지 않는 메모 업데이트:', data);
     }
 }
 

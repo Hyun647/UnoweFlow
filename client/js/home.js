@@ -41,21 +41,31 @@ function showProjectList() {
 }
 
 function updateDashboard() {
+    const totalProjectsElement = document.getElementById('total-projects');
+    const ongoingProjectsElement = document.getElementById('ongoing-projects');
+    const completedProjectsElement = document.getElementById('completed-projects');
+    const activityList = document.getElementById('activity-list');
+
+    if (!totalProjectsElement || !ongoingProjectsElement || !completedProjectsElement) {
+        console.log('대시보드 요소를 찾을 수 없습니다. 현재 대시보드 페이지가 아닐 수 있습니다.');
+        return;
+    }
+
     const totalProjects = projects.length;
     const ongoingProjects = projects.filter(p => p.progress < 100).length;
     const completedProjects = projects.filter(p => p.progress === 100).length;
 
-    document.getElementById('total-projects').textContent = totalProjects;
-    document.getElementById('ongoing-projects').textContent = ongoingProjects;
-    document.getElementById('completed-projects').textContent = completedProjects;
+    totalProjectsElement.textContent = totalProjects;
+    ongoingProjectsElement.textContent = ongoingProjects;
+    completedProjectsElement.textContent = completedProjects;
 
-    // 최근 활동 업데이트 (예시)
-    const activityList = document.getElementById('activity-list');
-    activityList.innerHTML = `
-        <li>UnoweFlow로 프로젝트 관리의 효율성을 높이세요!</li>
-        <li>직관적인 UI로 팀 협업이 더욱 쉬워집니다.</li>
-        <li>지금 바로 UnoweFlow를 시작해보세요!</li>
-    `;
+    if (activityList) {
+        activityList.innerHTML = `
+            <li>UnoweFlow로 프로젝트 관리의 효율성을 높이세요!</li>
+            <li>직관적인 UI로 팀 협업이 더욱 쉬워집니다.</li>
+            <li>지금 바로 UnoweFlow를 시작해보세요!</li>
+        `;
+    }
 }
 
 function updateProjectList() {
@@ -88,7 +98,11 @@ function updateProjectList() {
             sidebarProjectList.appendChild(li);
         });
     }
-    updateDashboard(); // 프로젝트 리스트가 업데이트될 때마다 대시보드도 업데이트
+    
+    // 대시보드 페이지에 있을 때만 updateDashboard 호출
+    if (document.getElementById('dashboard')) {
+        updateDashboard();
+    }
 }
 
 function searchProjects() {

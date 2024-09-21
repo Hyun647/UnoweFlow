@@ -35,9 +35,12 @@ function renameProject(projectId) {
 }
 
 function updateProjectInUI(project) {
-    // 프로젝트 목록에서 프로젝트 업데이트
     const projectElement = document.getElementById(`project-${project.id}`);
     if (projectElement) {
+        const projectNameElement = projectElement.querySelector('.project-name');
+        if (projectNameElement) {
+            projectNameElement.textContent = project.name || '이름 없음';
+        }
         const progressBar = projectElement.querySelector('.progress-bar');
         const progressText = projectElement.querySelector('.progress-text');
         if (progressBar && progressText) {
@@ -85,11 +88,20 @@ function handleProjectChange(data) {
             }
             break;
         case 'PROJECT_UPDATED':
-            updateProjectInUI(data.project);
+            const index = projects.findIndex(p => p.id === data.project.id);
+            if (index !== -1) {
+                projects[index] = data.project;
+                updateProjectInUI(data.project);
+                updateProjectList();
+            }
             break;
         case 'PROJECT_DELETED':
             projects = projects.filter(p => p.id !== data.projectId);
             removeProjectFromUI(data.projectId);
+            updateProjectList();
+            if (getCurrentProjectId() === data.projectId) {
+                showProjectList();
+            }
             break;
     }
 }
