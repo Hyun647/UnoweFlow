@@ -1,5 +1,5 @@
 let currentProjectId = null;
-let isEditorVisible = true;
+let isEditorVisible = false; // 기본값을 false로 유지
 
 function showMemo(projectId) {
     currentProjectId = projectId;
@@ -12,12 +12,12 @@ function showMemo(projectId) {
             <div id="memo-header">
                 <h2>${projectName} 메모장</h2>
                 <div>
-                    <button id="toggle-editor" onclick="toggleEditor()">에디터 토글</button>
+                    <button id="toggle-editor" onclick="toggleEditor()">에디터 보이기</button>
                     <button onclick="showProjectDetails('${projectId}')">일정으로 돌아가기</button>
                 </div>
             </div>
             <div id="memo-content">
-                <div id="memo-editor">
+                <div id="memo-editor" style="display: none;">
                     <textarea id="memo"></textarea>
                 </div>
                 <div id="content-container"></div>
@@ -34,6 +34,10 @@ function showMemo(projectId) {
 
     // 새로운 스타일 적용
     applyMemoStyles();
+    
+    // 에디터를 숨기고 컨텐츠 컨테이너를 전체 너비로 설정
+    const contentContainer = document.getElementById('content-container');
+    contentContainer.style.flex = '2';
 }
 
 function applyMemoStyles() {
@@ -64,8 +68,7 @@ function applyMemoStyles() {
     memoContent.style.gap = '20px';
 
     memoEditor.style.flex = '1';
-    memoEditor.style.display = 'flex';
-    memoEditor.style.flexDirection = 'column';
+    memoEditor.style.display = 'none'; // 기본적으로 숨김 상태로 설정
 
     memoTextarea.style.flexGrow = '1';
     memoTextarea.style.resize = 'none';
@@ -96,7 +99,7 @@ function toggleEditor() {
         toggleButton.textContent = '에디터 숨기기';
     } else {
         memoEditor.style.display = 'none';
-        contentContainer.style.flex = '2';
+        contentContainer.style.flex = '1';
         toggleButton.textContent = '에디터 보이기';
     }
 }

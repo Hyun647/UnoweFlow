@@ -13,12 +13,16 @@
 
     /* 헤더 스타일 수정 */
     header {
-        height: 50px;
+        background-color: var(--card-bg-color);
+        border-bottom: 1px solid var(--border-color);
+        padding: 12px 0;
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
         z-index: 1000;
+        height: 60px; /* 헤더의 높이를 명시적으로 지정 */
+        box-sizing: border-box; /* padding을 높이에 포함 */
     }
 
     .header-content {

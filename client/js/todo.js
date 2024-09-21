@@ -110,7 +110,7 @@ function updateAssigneeProgress(projectId) {
     const projectTodos = todos[projectId] || [];
     const assignees = getAssignees(projectId);
 
-    let progressHTML = '';
+    let progressHTML = '<h3>담당자별 작업률</h3>';
     assignees.forEach(assignee => {
         const assigneeTodos = projectTodos.filter(todo => todo.assignee === assignee);
         const totalTodos = assigneeTodos.length;
@@ -167,6 +167,9 @@ function showProjectStatistics(projectId) {
         type: 'UPDATE_PROJECT',
         project: { id: projectId, progress: project.progress }
     }));
+
+    // 담당자별 작업률 업데이트
+    updateAssigneeProgress(projectId);
 }
 
 function updateTodoList(filteredTodos) {
