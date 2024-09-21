@@ -232,26 +232,33 @@ function createTodoRow(todo, projectId) {
     const row = document.createElement('tr');
     row.className = 'todo-item';
     row.id = `todo-${todo.id}`;
+    row.setAttribute('data-priority', todo.priority);
     row.innerHTML = `
-        <td><input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''} onchange="updateTodoStatus('${todo.id}', this.checked)"></td>
-        <td><span class="todo-text">${todo.text}</span></td>
-        <td>
+        <td data-label="완료">
+            <input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''} onchange="updateTodoStatus('${todo.id}', this.checked)">
+        </td>
+        <td data-label="내용">
+            <span class="todo-text">${todo.text}</span>
+        </td>
+        <td data-label="담당자">
             <select class="todo-assignee" onchange="updateTodoAssignee('${todo.id}', this.value)">
                 <option value="">담당자 없음</option>
                 ${getAssigneeOptions(projectId, todo.assignee)}
             </select>
         </td>
-        <td>
+        <td data-label="우선순위">
             <select class="todo-priority" onchange="updateTodoPriority('${todo.id}', this.value)">
                 <option value="low" ${todo.priority === 'low' ? 'selected' : ''}>낮음</option>
                 <option value="medium" ${todo.priority === 'medium' ? 'selected' : ''}>중간</option>
                 <option value="high" ${todo.priority === 'high' ? 'selected' : ''}>높음</option>
             </select>
         </td>
-        <td><input type="date" class="todo-due-date" value="${todo.dueDate || ''}" onchange="updateTodoDueDate('${todo.id}', this.value)"></td>
-        <td>
-            <button onclick="editTodo('${todo.id}')">수정</button>
-            <button onclick="deleteTodo('${todo.id}')">삭제</button>
+        <td data-label="마감일">
+            <input type="date" class="todo-due-date" value="${todo.dueDate || ''}" onchange="updateTodoDueDate('${todo.id}', this.value)">
+        </td>
+        <td class="todo-actions">
+            <button onclick="editTodo('${todo.id}')" class="button">수정</button>
+            <button onclick="deleteTodo('${todo.id}')" class="button delete-btn">삭제</button>
         </td>
     `;
     return row;

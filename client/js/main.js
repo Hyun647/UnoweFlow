@@ -159,6 +159,7 @@ window.addEventListener('load', () => {
     if (hamburgerMenu) {
         hamburgerMenu.addEventListener('click', toggleSidebar);
     } else {
+        console.error('햄버거 메뉴 요소를 찾을 수 없습니다.');
     }
 
     // 프로젝트 검색 이벤트 리스너 추가
@@ -166,6 +167,7 @@ window.addEventListener('load', () => {
     if (projectSearch) {
         projectSearch.addEventListener('input', searchProjects);
     } else {
+        console.error('프로젝트 검색 입력 요소를 찾을 수 없습니다.');
     }
 });
 
@@ -197,31 +199,48 @@ function updateProjectInUI(project) {
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
     const content = document.querySelector('.content');
-    
-    if (sidebar && content) {
-        sidebar.classList.toggle('open');
-        content.classList.toggle('sidebar-open');
-        
-        // 트랜지션이 끝난 후 레이아웃 재조정
-        setTimeout(() => {
-            window.dispatchEvent(new Event('resize'));
-        }, 300); // CSS 트랜지션 시간과 일치시킴
+    const body = document.body;
+
+    sidebar.classList.toggle('open');
+    content.classList.toggle('sidebar-open');
+    body.classList.toggle('sidebar-open');
+
+    // 사이드바가 열릴 때 컨텐츠 영역 마진 조정
+    if (sidebar.classList.contains('open')) {
+        content.style.marginLeft = '250px';
+    } else {
+        content.style.marginLeft = '0';
     }
 }
 
-// closeSidebar 함수도 유사하게 수정
+// closeSidebar 함도 유사하게 수정
 function closeSidebar() {
     const sidebar = document.querySelector('.sidebar');
     const content = document.querySelector('.content');
     
     if (sidebar && content) {
+        const isMobile = window.innerWidth <= 768;
+
+        if (isMobile) {
+            sidebar.style.transition = 'none';
+            content.style.transition = 'none';
+        }
+
         sidebar.classList.remove('open');
         content.classList.remove('sidebar-open');
-        
-        // 트랜지션이 끝난 후 레이아웃 재조정
+
+        if (isMobile) {
+            sidebar.offsetHeight;
+            content.offsetHeight;
+            setTimeout(() => {
+                sidebar.style.transition = '';
+                content.style.transition = '';
+            }, 0);
+        }
+
         setTimeout(() => {
             window.dispatchEvent(new Event('resize'));
-        }, 300); // CSS 트랜지션 시간과 일치시킴
+        }, isMobile ? 0 : 300);
     }
 }
 
@@ -252,7 +271,7 @@ function handleProjectChange(data) {
             projects = projects.filter(p => p.id !== data.projectId);
             removeProjectFromUI(data.projectId);
             updateProjectList();
-            // 만약 현재 삭제된 프로젝의 상세 페이지를 보고 있다면 프로젝트 목록으로 이동
+            // 만약 현재 삭제된 프로의 상세 페이지를 보고 있다면 프로젝트 목록으로 이동
             if (getCurrentProjectId() === data.projectId) {
                 showProjectList();
             }
@@ -260,7 +279,7 @@ function handleProjectChange(data) {
     }
 }
 
-// showProjectDetails 함수를 전역 스코프에 노출
+// showProjectDetails 수를 전역 스코프에 출
 if (typeof window.showProjectDetails !== 'function') {
     window.showProjectDetails = function(projectId) {
         if (typeof showProjectDetails === 'function') {
@@ -268,3 +287,51 @@ if (typeof window.showProjectDetails !== 'function') {
         }
     };
 }
+
+function createModal(content, modalId) {
+    const existingModal = document.getElementById(modalId);
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = modalId;
+    modal.innerHTML = `
+        <div class="modal-content">
+            ${content}
+            <div class="modal-footer">
+                <button onclick="closeModal('${modalId}')" class="button close-btn">닫기</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    openModal(modalId);
+}
+
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const hamburgerMenu = document.querySelector('.hamburger-menu');
+    const sidebar = document.querySelector('.sidebar');
+    const content = document.querySelector('.content');
+
+    hamburgerMenu.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        content.classList.toggle('sidebar-open');
+    });
+});

@@ -150,7 +150,7 @@ function showProjectDetails(projectId) {
                         ${getAssigneeOptions(project.id)}
                     </select>
                     <select id="new-todo-priority">
-                        <option value="low">음</option>
+                        <option value="low">낮음</option>
                         <option value="medium">중간</option>
                         <option value="high">높음</option>
                     </select>
@@ -189,6 +189,17 @@ function showProjectDetails(projectId) {
     // main-content 요소의 스타일도 조정
     mainContentElement.style.marginLeft = '0';
     mainContentElement.style.width = '100%';
+
+    // 프로젝트 상세 정보를 표시한 후
+    const projectDetailsContainer = document.getElementById('project-details-container');
+    if (projectDetailsContainer) {
+        projectDetailsContainer.scrollTop = 0; // 스크롤을 맨 위로 이동
+    }
+
+    // 모바일에서 사이드바가 열려있다면 닫기
+    if (window.innerWidth <= 768) {
+        closeSidebar();
+    }
 }
 
 function getCurrentProjectId() {
@@ -217,7 +228,7 @@ function showManageAssigneesModal(projectId) {
         assigneeListHTML += `
             <li>
                 ${assignee}
-                <button onclick="deleteAssignee('${projectId}', '${assignee}')" class="delete-btn">삭제</button>
+                <button onclick="deleteAssignee('${projectId}', '${assignee}')" class="button delete-btn">삭제</button>
             </li>
         `;
     });
@@ -230,17 +241,16 @@ function showManageAssigneesModal(projectId) {
             </ul>
             <div class="add-assignee-form">
                 <input type="text" id="new-assignee-name" placeholder="담당자 이름">
-                <button onclick="addNewAssignee('${projectId}')">담당자 추가</button>
+                <button onclick="addNewAssignee('${projectId}')" class="button">담당자 추가</button>
             </div>
-            <button onclick="closeModal()" class="close-btn">닫기</button>
+            <button onclick="closeModal()" class="button close-btn">닫기</button>
         </div>
     `;
     document.body.appendChild(modal);
 
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            closeModal();
-        }
+    // 모달 내부 클릭 시 이벤트 전파 중지
+    modal.querySelector('.modal-content').addEventListener('click', (e) => {
+        e.stopPropagation();
     });
 }
 
@@ -288,7 +298,7 @@ function updateAssigneeListInModal(projectId) {
         assigneeListHTML += `
             <li>
                 ${assignee}
-                <button onclick="deleteAssignee('${projectId}', '${assignee}')" class="delete-btn">삭제</button>
+                <button onclick="deleteAssignee('${projectId}', '${assignee}')" class="button delete-btn">삭제</button>
             </li>
         `;
     });
