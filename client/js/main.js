@@ -8,23 +8,23 @@ function initializeWebSocket() {
     socket = new WebSocket('ws://localhost:3000');
 
     socket.onopen = () => {
-        console.log('WebSocket 연결이 열렸습니다.');
+        console.log('WebSocket이 연결되었습니다.');
         requestFullStateUpdate();
     };
 
     socket.onmessage = (event) => {
-        console.log('WebSocket 메시지 수신:', event.data);
+        console.log('WebSocket 메시지 수신');
         const data = JSON.parse(event.data);
         handleWebSocketMessage(data);
     };
 
     socket.onclose = (event) => {
-        console.log('WebSocket 연결이 닫혔습니다.', event.reason);
+        console.log('WebSocket 연결이 끊어졌습니다.');
         setTimeout(initializeWebSocket, 3000);
     };
 
     socket.onerror = (error) => {
-        console.error('WebSocket 오류:', error);
+        console.error('WebSocket 연결 오류');
     };
 }
 
@@ -33,7 +33,6 @@ function requestFullStateUpdate() {
 }
 
 function handleWebSocketMessage(data) {
-    console.log('WebSocket 메시지 수신:', data);
     switch (data.type) {
         case 'FULL_STATE_UPDATE':
             projects = data.projects;
@@ -75,10 +74,8 @@ function handleWebSocketMessage(data) {
             removeAssigneeFromTodos(data.projectId, data.assigneeName);
             break;
         default:
-            console.log('알 수 없는 메시지 타입:', data.type);
+            console.log('알 수 없는 메시지 타입');
     }
-    console.log('현재 프로젝트 목록:', projects);
-    console.log('현재 할 일 목록:', todos);
 }
 
 function removeAssigneeFromTodos(projectId, assigneeName) {
@@ -119,7 +116,7 @@ window.addEventListener('load', () => {
 // 예: window.showProjectDetails = showProjectDetails;
 
 function updateProjectInUI(project) {
-    console.log('프로젝트 UI 업데이트:', project);
+    console.log('프로젝트 UI 업데이트');
     const projectElement = document.getElementById(`project-${project.id}`);
     if (projectElement) {
         const projectNameElement = projectElement.querySelector('.project-name');

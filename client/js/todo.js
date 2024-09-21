@@ -167,8 +167,6 @@ function updateTodoList(projectId, filteredTodos) {
 
     const priorityTodos = getPriorityTodos(filteredTodos);
     
-    console.log('우선 처리할 일:', priorityTodos); // 디버깅을 위한 로그
-
     if (priorityTodos.length > 0) {
         const priorityTable = createTodoTable(priorityTodos, projectId);
         priorityTodoListElement.appendChild(priorityTable);

@@ -2,16 +2,13 @@ function addProject() {
     const projectInput = document.getElementById('project-input');
     const projectName = projectInput.value.trim();
     if (projectName) {
-        console.log('프로젝트 추가 요청:', projectName);
         if (socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({ type: 'ADD_PROJECT', name: projectName }));
             projectInput.value = '';
         } else {
-            console.error('WebSocket 연결이 열려있지 않습니다.');
             alert('서버와의 연결이 끊어졌습니다. 페이지를 새로고침해주세요.');
         }
     } else {
-        console.log('프로젝트 이름이 비어있습니다.');
         alert('프로젝트 이름을 입력해주세요.');
     }
 }
@@ -38,7 +35,6 @@ function renameProject(projectId) {
 }
 
 function updateProjectInUI(project) {
-    console.log('프로젝트 UI 업데이트:', project);
     
     // 프로젝트 목록에서 프로젝트 업데이트
     const projectIndex = projects.findIndex(p => p.id === project.id);
@@ -97,19 +93,16 @@ function handleProjectChange(data) {
             if (data.project && data.project.name) {
                 projects.push(data.project);
                 updateProjectList();
-                console.log('프로젝트 추가됨:', data.project);
             } else {
                 console.error('Invalid project data received:', data);
             }
             break;
         case 'PROJECT_UPDATED':
             updateProjectInUI(data.project);
-            console.log('프로젝트 업데이트됨:', data.project);
             break;
         case 'PROJECT_DELETED':
             projects = projects.filter(p => p.id !== data.projectId);
             removeProjectFromUI(data.projectId);
-            console.log('프로젝트 삭제됨:', data.projectId);
             break;
     }
 }

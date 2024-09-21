@@ -361,19 +361,63 @@ button.delete-btn:hover {
     border-bottom: none;
 }
 
+/* 모바일 전용 레이아웃 */
 @media (max-width: 600px) {
     main {
-        padding: 0 0.5rem;
-        margin-top: 5rem; /* 헤더 아래에 여백 추가 */
+        padding: 0 1rem;
+        margin-top: 5rem;
     }
 
-    .project, .todo-item {
-        padding: 0.75rem;
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
     }
 
+    header h1 {
+        font-size: 1.2rem;
+        margin-top: 0.5rem;
+    }
+
+    h2 {
+        font-size: 1.2rem;
+    }
+
+    #project-list,
+    #todo-list {
+        width: 100%;
+    }
+
+    .project,
+    .todo-item {
+        width: 100%;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-sizing: border-box;
+    }
+
+    #project-form,
     #todo-filters,
     #todo-input {
         flex-direction: column;
+        width: 100%;
+        gap: 0.5rem;
+    }
+
+    #project-form input,
+    #project-form button,
+    #project-search,
+    #todo-filters select,
+    #todo-input input,
+    #todo-input select,
+    #todo-input button,
+    #todo-search {
+        width: 100%;
+        margin-bottom: 0.5rem;
+        box-sizing: border-box;
+    }
+
+    .todo-table {
+        font-size: 0.9rem;
     }
 
     .todo-table th,
@@ -381,59 +425,64 @@ button.delete-btn:hover {
         padding: 0.5rem;
     }
 
-    #project-list {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-    }
-
-    .project {
-        width: 100%;
-        margin-bottom: 1rem;
-    }
-
-    #project-form {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    #project-form input,
-    #project-form button,
-    #project-search {
-        width: 100%;
+    .todo-table th:nth-child(n+4),
+    .todo-table td:nth-child(n+4) {
+        display: none;
     }
 
     .project-buttons {
         flex-direction: column;
         align-items: stretch;
+        width: calc(100% - 2rem);
+        right: 1rem;
+        bottom: 1rem;
     }
 
     .project-buttons button {
+        width: 100%;
         margin-top: 0.5rem;
-        width: 100%;
     }
 
-    #todo-input {
-        flex-direction: column;
+    #priority-todo-list {
+        padding: 1rem;
     }
 
-    #todo-input input,
-    #todo-input select,
-    #todo-input button,
-    #todo-search {
+    .modal-content {
+        width: 90%;
+        padding: 1rem;
+    }
+
+    #new-assignee-name {
         width: 100%;
+        margin-bottom: 1rem;
+    }
+}
+
+/* 더 작은 화면을 위한 추가 스타일 */
+@media (max-width: 400px) {
+    main {
+        padding: 0 0.5rem;
+    }
+
+    .project,
+    .todo-item {
+        padding: 0.75rem;
+    }
+
+    .project-buttons {
+        width: calc(100% - 1.5rem);
+        right: 0.75rem;
+        bottom: 0.75rem;
     }
 }
 
 .project {
     position: relative;
-    padding-bottom: 10px; /* 버튼을 위한 공간 확보 */
-    min-height: 80px; /* 프로젝트 박스의 최소 높이 설정 */
+    padding: 20px;
+    padding-bottom: 80px; /* 버튼을 위한 공간 추가 확보 */
     background-color: var(--card-bg-color);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    padding: 20px;
     margin-bottom: 20px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     transition: box-shadow 0.3s ease;
@@ -443,26 +492,19 @@ button.delete-btn:hover {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.project-buttons {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    display: flex;
-    gap: 5px;
+.project h3 {
+    margin: 0 0 20px 0; /* 제목 아래 여백 증가 */
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--text-color);
 }
-
-.project-buttons button {
-    margin-top: 10px;
-}
-
-/* 기존 스타일 유지 */
 
 .project-progress-bar-container {
     width: 100%;
     height: 20px;
     background-color: #30363d;
     border-radius: 10px;
-    margin-bottom: 15px;
+    margin-bottom: 25px; /* 진행률 바 아래 여백 증가 */
     position: relative;
     overflow: hidden;
 }
@@ -481,6 +523,23 @@ button.delete-btn:hover {
     transform: translate(-50%, -50%);
     color: var(--text-color);
     font-weight: bold;
+}
+
+.project-buttons {
+    position: absolute;
+    right: 20px;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 10px;
+    width: calc(100% - 40px); /* 좌우 패딩 고려 */
+    margin-top: 15px; /* 버튼들 위에 마진 추가 */
+}
+
+.project-buttons button {
+    margin-top: 0; /* 상단 마진 제거 */
+    font-size: 0.8rem;
+    padding: 8px 12px;
 }
 
 #project-details-container {

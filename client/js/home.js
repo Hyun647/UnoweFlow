@@ -14,7 +14,6 @@ function showProjectList() {
 }
 
 function updateProjectList(filteredProjects = projects) {
-    console.log('프로젝트 리스트 업데이트:', filteredProjects);
     const projectList = document.getElementById('project-list');
     if (!projectList) {
         console.error('project-list 요소를 찾을 수 없습니다.');
@@ -31,7 +30,6 @@ function updateProjectList(filteredProjects = projects) {
             }
         });
     }
-    console.log('프로젝트 리스트 HTML:', projectList.innerHTML); // 디버깅용 로그 추가
 }
 
 function createProjectElement(project) {
@@ -70,16 +68,13 @@ function addProject() {
     const projectInput = document.getElementById('project-input');
     const projectName = projectInput.value.trim();
     if (projectName) {
-        console.log('프로젝트 추가 요청:', projectName);
         if (socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({ type: 'ADD_PROJECT', name: projectName }));
             projectInput.value = '';
         } else {
-            console.error('WebSocket 연결이 열려있지 않습니다.');
             alert('서버와의 연결이 끊어졌습니다. 페이지를 새로고침해주세요.');
         }
     } else {
-        console.log('프로젝트 이름이 비어있습니다.');
         alert('프로젝트 이름을 입력해주세요.');
     }
 }
