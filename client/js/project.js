@@ -181,7 +181,9 @@ function showProjectDetails(projectId) {
     showProjectStatistics(project.id);
     updateAssigneeProgress(project.id);
     
+    // 필터 및 정렬 옵션 초기화
     setTimeout(() => {
+        updateFilterOptions(project.id);
         filterAndSortTodos(project.id);
         if (typeof window.initializeTodoListeners === 'function') {
             window.initializeTodoListeners();
@@ -221,9 +223,11 @@ function getCurrentProjectId() {
 
 function getAssigneeOptions(projectId, currentAssignee = '') {
     const assignees = getAssignees(projectId);
-    return assignees.map(assignee => 
-        `<option value="${assignee}" ${assignee === currentAssignee ? 'selected' : ''}>${assignee}</option>`
-    ).join('');
+    let options = '<option value="">담당자 없음</option>';
+    assignees.forEach(assignee => {
+        options += `<option value="${assignee}" ${assignee === currentAssignee ? 'selected' : ''}>${assignee}</option>`;
+    });
+    return options;
 }
 
 function getAssignees(projectId) {
@@ -331,15 +335,18 @@ function updateTodoAssigneeOptions(projectId) {
     const newAssigneeOptions = getAssigneeOptions(projectId);
     assigneeSelects.forEach(select => {
         const currentValue = select.value;
-        select.innerHTML = `<option value="">담당자 없음</option>${newAssigneeOptions}`;
+        select.innerHTML = newAssigneeOptions;
         select.value = currentValue;
     });
 
     // 새 할 일 입력 폼의 담당자 선택 옵션도 업데이트
     const newTodoAssigneeSelect = document.getElementById('new-todo-assignee');
     if (newTodoAssigneeSelect) {
-        newTodoAssigneeSelect.innerHTML = `<option value="">담당자 없음</option>${newAssigneeOptions}`;
+        newTodoAssigneeSelect.innerHTML = newAssigneeOptions;
     }
+
+    // 필터 옵션도 업데이트
+    updateFilterOptions(projectId);
 }
 
 function filterAndSortTodos(projectId) {
@@ -404,6 +411,19 @@ function deleteProjectConfirm(projectId) {
         }));
         closeModal();
         showProjectList(); // 프로젝트 목록 페이지로 이동
+    }
+}
+
+// 새로운 함수: 필터 옵션 업데이트
+function updateFilterOptions(projectId) {
+    const filterAssignee = document.getElementById('filter-assignee');
+    if (filterAssignee) {
+        const assignees = getAssignees(projectId);
+        let options = '<option value="all">모든 담당자</option>';
+        assignees.forEach(assignee => {
+            options += `<option value="${assignee}">${assignee}</option>`;
+        });
+        filterAssignee.innerHTML = options;
     }
 }
 
