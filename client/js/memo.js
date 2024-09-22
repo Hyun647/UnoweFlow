@@ -31,7 +31,7 @@ function showMemo(projectId) {
     
     // 에디터를 숨기고 컨텐츠 컨테이너를 전체 너비로 설정
     const contentContainer = document.getElementById('content-container');
-    contentContainer.style.flex = '2';
+    contentContainer.style.flex = '1';
 }
 
 function applyMemoStyles() {
@@ -60,9 +60,11 @@ function applyMemoStyles() {
     memoContent.style.display = 'flex';
     memoContent.style.flexGrow = '1';
     memoContent.style.gap = '20px';
+    memoContent.style.height = 'calc(100% - 60px)'; // 헤더 높이를 뺀 나머지 높이
 
     memoEditor.style.flex = '1';
     memoEditor.style.display = 'none'; // 기본적으로 숨김 상태로 설정
+    memoEditor.style.height = '100%'; // 전체 높이 사용
 
     memoTextarea.style.width = '100%';
     memoTextarea.style.height = '100%';
@@ -77,6 +79,7 @@ function applyMemoStyles() {
     contentContainer.style.border = '1px solid var(--border-color)';
     contentContainer.style.borderRadius = '4px';
     contentContainer.style.width = '100%';
+    contentContainer.style.height = '100%'; // 전체 높이 사용
 }
 
 function toggleEditor() {
@@ -88,12 +91,12 @@ function toggleEditor() {
     
     if (isEditorVisible) {
         memoEditor.style.display = 'block';
-        memoEditor.style.height = '50%';
-        contentContainer.style.height = '50%';
+        memoEditor.style.width = '50%';
+        contentContainer.style.width = '50%';
         toggleButton.textContent = '에디터 숨기기';
     } else {
         memoEditor.style.display = 'none';
-        contentContainer.style.height = '100%';
+        contentContainer.style.width = '100%';
         toggleButton.textContent = '에디터 보이기';
     }
 }
