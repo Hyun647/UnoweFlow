@@ -127,7 +127,7 @@ function showProjectDetails(projectId) {
                 <div class="project-actions">
                     <button onclick="showMemo('${project.id}')" class="button">메모장</button>
                     <button onclick="showManageAssigneesModal('${project.id}')" class="button">담당자 관리</button>
-                    <button onclick="showProjectSettingsModal('${project.id}')" class="button">��로젝트 설정</button>
+                    <button onclick="showProjectSettingsModal('${project.id}')" class="button">프로젝트 설정</button>
                 </div>
             </div>
             <div class="project-stats">
