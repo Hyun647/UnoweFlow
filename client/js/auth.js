@@ -1,17 +1,17 @@
-let socket;
+let authSocket;
 
-function connectWebSocket() {
-    socket = new WebSocket('ws://110.15.29.199:6521');
+function connectAuthWebSocket() {
+    authSocket = new WebSocket('ws://110.15.29.199:6521');
     
-    socket.onopen = () => {
-        console.log('웹소켓 연결됨');
+    authSocket.onopen = () => {
+        console.log('인증용 웹소켓 연결됨');
     };
     
-    socket.onmessage = (event) => {
+    authSocket.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === 'auth_result') {
             if (data.success) {
-                showMainPage();
+                showMainContent();
             } else {
                 alert('비밀번호가 틀렸습니다.');
             }
@@ -21,19 +21,30 @@ function connectWebSocket() {
 
 function authenticate() {
     const password = document.getElementById('password').value;
-    if (socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ type: 'auth', password }));
+    if (authSocket.readyState === WebSocket.OPEN) {
+        authSocket.send(JSON.stringify({ type: 'auth', password }));
     } else {
         console.error('WebSocket is not open');
         alert('서버 연결에 문제가 있습니다. 페이지를 새로고침 해주세요.');
     }
 }
 
-function showMainPage() {
+function showMainContent() {
     document.getElementById('auth-container').style.display = 'none';
-    document.getElementById('main-container').style.display = 'block';
+    document.querySelector('header').style.display = 'block';
+    document.querySelector('main').style.display = 'flex';
+    if (typeof window.initializeMainPage === 'function') {
+        window.initializeMainPage();
+    } else {
+        console.error('initializeMainPage 함수를 찾을 수 없습니다.');
+    }
 }
 
 window.onload = () => {
-    connectWebSocket();
+    connectAuthWebSocket();
+    document.querySelector('header').style.display = 'none';
+    document.querySelector('main').style.display = 'none';
 };
+
+// 전역 스코프에 함수 노출
+window.authenticate = authenticate;

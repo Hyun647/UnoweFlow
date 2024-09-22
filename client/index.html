@@ -2,10 +2,12 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>프로젝트</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>UnoweFlow</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="mobile.css">
+    <link rel="icon" href="./img/unowelogo.jpeg"/>
+    <link rel="apple-touch-icon" href="./img/unowelogo.jpeg"/>
 </head>
 <body>
     <div id="auth-container">
@@ -13,13 +15,37 @@
         <input type="password" id="password" placeholder="비밀번호">
         <button onclick="authenticate()">확인</button>
     </div>
-    
-    <div id="main-container" style="display: none;">
-        <h1>메인 페이지</h1>
-        <!-- 여기에 메인 페이지 내용을 추가하세요 -->
-    </div>
-
+    <header>
+        <div class="header-content">
+            <div class="hamburger-menu" onclick="toggleSidebar()">☰</div>
+            <div class="logo-title-container">
+                <a href="./index.html" class="logo-link">
+                    <img src="./img/unowelogo.jpeg" alt="Logo" class="logo">
+                    <h1>UnoweFlow</h1>
+                </a>
+            </div>
+        </div>
+    </header>
+    <main>
+        <div class="sidebar">
+            <h2>프로젝트</h2>
+            <div id="project-search-container">
+                <input type="text" id="project-search" placeholder="프로젝트 검색">
+            </div>
+            <ul class="project-list" id="project-list">
+                <!-- 프로젝트 목록이 여기에 동적으로 추가됩니다 -->
+            </ul>
+        </div>
+        <div class="content" id="main-content">
+            <!-- 메인 컨텐츠가 여기에 동적으로 로드됩니다 -->
+        </div>
+    </main>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/2.0.3/marked.min.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/main.js"></script>
+    <script src="js/project.js"></script>
+    <script src="js/home.js"></script>
+    <script src="js/todo.js"></script>
+    <script src="js/memo.js"></script>
 </body>
 </html>

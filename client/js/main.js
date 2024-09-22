@@ -3,6 +3,13 @@ let projects = [];
 let todos = {};
 let projectAssignees = {};
 
+function initializeMainPage() {
+    console.log('메인 페이지 초기화');
+    initializeWebSocket();
+    showProjectList();
+    setupEventListeners();
+}
+
 function initializeWebSocket() {
     console.log('WebSocket 연결 시도...');
     socket = new WebSocket('ws:/110.15.29.199:6521');
@@ -163,60 +170,6 @@ function removeAssigneeFromTodos(projectId, assigneeName) {
     }
 }
 
-// 페이지 로드 시 WebSocket 연결 초기화 및 이벤트 리스너 추가
-window.addEventListener('load', () => {
-    initializeWebSocket();
-    showProjectList();  // 초기 화면으로 프로젝트 목록 표시
-    
-    // 햄버거 메뉴 클릭 이벤트 리스너 추가
-    const hamburgerMenu = document.querySelector('.hamburger-menu');
-    if (hamburgerMenu) {
-        hamburgerMenu.addEventListener('click', toggleSidebar);
-    } else {
-        console.error('햄버거 메뉴 요소를 찾을 수 없습니다.');
-    }
-
-    // 프로젝트 검색 이벤트 리스너 추가
-    const projectSearch = document.getElementById('project-search');
-    if (projectSearch) {
-        projectSearch.addEventListener('input', searchProjects);
-    } else {
-        console.error('프로젝트 검색 입력 요소를 찾을 수 없습니다.');
-    }
-
-    // 페이지 로드 완료 후 전체 상태 업데이트 요청
-    setTimeout(() => {
-        if (socket.readyState === WebSocket.OPEN) {
-            requestFullStateUpdate();
-        }
-    }, 1000);
-});
-
-// 전역 스코프에서 필요한 함수들을 정의하거나 다른 파일에서 가져옵니다.
-// 예: window.showProjectDetails = showProjectDetails;
-
-function updateProjectInUI(project) {
-    const projectElement = document.getElementById(`project-${project.id}`);
-    if (projectElement) {
-        const projectNameElement = projectElement.querySelector('.project-name');
-        if (projectNameElement) {
-            projectNameElement.textContent = project.name || '이름 없음';
-        }
-        const progressBar = projectElement.querySelector('.progress-bar');
-        const progressText = projectElement.querySelector('.progress-text');
-        if (progressBar && progressText) {
-            const progress = project.progress || 0;
-            progressBar.style.width = `${progress}%`;
-            progressText.textContent = `${progress}%`;
-        }
-    }
-    // 프로젝트 목록 페이지에 있을 경우에만 updateProjectList 호출
-    const projectList = document.getElementById('project-list');
-    if (projectList) {
-        updateProjectList();
-    }
-}
-
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
     const content = document.querySelector('.content');
@@ -265,10 +218,27 @@ function closeSidebar() {
     }
 }
 
-// 전역 스코프에 노출
-window.toggleSidebar = toggleSidebar;
-
-window.closeSidebar = closeSidebar;
+function updateProjectInUI(project) {
+    const projectElement = document.getElementById(`project-${project.id}`);
+    if (projectElement) {
+        const projectNameElement = projectElement.querySelector('.project-name');
+        if (projectNameElement) {
+            projectNameElement.textContent = project.name || '이름 없음';
+        }
+        const progressBar = projectElement.querySelector('.progress-bar');
+        const progressText = projectElement.querySelector('.progress-text');
+        if (progressBar && progressText) {
+            const progress = project.progress || 0;
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `${progress}%`;
+        }
+    }
+    // 프로젝트 목록 페이지에 있을 경우에만 updateProjectList 호출
+    const projectList = document.getElementById('project-list');
+    if (projectList) {
+        updateProjectList();
+    }
+}
 
 function handleProjectChange(data) {
     switch (data.type) {
@@ -298,15 +268,6 @@ function handleProjectChange(data) {
             }
             break;
     }
-}
-
-// showProjectDetails 함수를 전역 스코프에 출
-if (typeof window.showProjectDetails !== 'function') {
-    window.showProjectDetails = function(projectId) {
-        if (typeof showProjectDetails === 'function') {
-            showProjectDetails(projectId);
-        }
-    };
 }
 
 function createModal(content, modalId) {
@@ -345,17 +306,6 @@ function closeModal(modalId) {
         document.body.style.overflow = 'auto';
     }
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-    const hamburgerMenu = document.querySelector('.hamburger-menu');
-    const sidebar = document.querySelector('.sidebar');
-    const content = document.querySelector('.content');
-
-    hamburgerMenu.addEventListener('click', function() {
-        sidebar.classList.toggle('open');
-        content.classList.toggle('sidebar-open');
-    });
-});
 
 function updateTodoList(projectId) {
     console.log('updateTodoList 함수 호출됨, projectId:', projectId);
@@ -431,3 +381,91 @@ function handleTodoChange(data) {
         updateTodoList(projectId);
     }
 }
+
+function setupEventListeners() {
+    // 여기에 필요한 이벤트 리스너를 추가합니다.
+    // 예: 프로젝트 추가 버튼 클릭 이벤트 등
+}
+
+function showProjectList() {
+    const mainContent = document.getElementById('main-content');
+    if (!mainContent) {
+        console.error('main-content 요소를 찾을 수 없습니다.');
+        return;
+    }
+    mainContent.innerHTML = `
+        <div id="project-management">
+            <div id="project-input-container">
+                <input type="text" id="project-input" placeholder="새 프로젝트 이름">
+                <button onclick="addProject()">추가</button>
+            </div>
+        </div>
+        <ul id="project-list"></ul>
+    `;
+    updateProjectList();
+}
+
+function updateProjectList() {
+    const projectList = document.getElementById('project-list');
+    if (!projectList) {
+        console.error('project-list 요소를 찾을 수 없습니다.');
+        return;
+    }
+    projectList.innerHTML = '';
+    projects.forEach(project => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+            <div class="project-item">
+                <span class="project-name">${project.name}</span>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: ${project.progress || 0}%"></div>
+                    <span class="progress-text">${project.progress || 0}%</span>
+                </div>
+                <button onclick="showProjectDetails('${project.id}')">상세 보기</button>
+                <button onclick="editProject('${project.id}')">수정</button>
+                <button onclick="deleteProject('${project.id}')">삭제</button>
+            </div>
+        `;
+        projectList.appendChild(li);
+    });
+}
+
+function addProject() {
+    const projectInput = document.getElementById('project-input');
+    if (projectInput) {
+        const projectName = projectInput.value.trim();
+        if (projectName !== '') {
+            socket.send(JSON.stringify({
+                type: 'ADD_PROJECT',
+                project: {
+                    name: projectName
+                }
+            }));
+            projectInput.value = '';
+        }
+    }
+}
+
+function showProjectDetails(projectId) {
+    // 프로젝트 상세 보기 로직 구현
+    console.log(`프로젝트 상세 보기: ${projectId}`);
+}
+
+function editProject(projectId) {
+    // 프로젝트 수정 로직 구현
+    console.log(`프로젝트 수정: ${projectId}`);
+}
+
+function deleteProject(projectId) {
+    // 프로젝트 삭제 로직 구현
+    console.log(`프로젝트 삭제: ${projectId}`);
+}
+
+// 전역 스코프에 함수들을 노출
+window.initializeMainPage = initializeMainPage;
+window.toggleSidebar = toggleSidebar;
+window.closeSidebar = closeSidebar;
+window.addProject = addProject;
+window.showProjectDetails = showProjectDetails;
+window.editProject = editProject;
+window.deleteProject = deleteProject;
