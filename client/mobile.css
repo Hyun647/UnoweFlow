@@ -1,6 +1,11 @@
 /* 모바일 기기를 위한 미디어 쿼리 */
 @media screen and (max-width: 768px) {
     
+    /* 전체 폰트 사이즈 축소 */
+    body {
+        font-size: 14px;
+    }
+
     /* 프로젝트 관리 섹션 */
     #project-management {
         flex-direction: column;
@@ -24,11 +29,12 @@
     #todo-search {
         width: 100%;
         box-sizing: border-box;
+        font-size: 12px;
     }
 
     /* 테이블 스타일 */
     .todo-table {
-        font-size: 12px;
+        font-size: 11px;
         display: block;
         overflow-x: auto;
         white-space: nowrap;
@@ -36,7 +42,15 @@
 
     .todo-table th,
     .todo-table td {
-        padding: 8px;
+        padding: 6px;
     }
 
+    /* 버튼 및 기타 요소 폰트 사이즈 조정 */
+    button, select, input {
+        font-size: 12px;
+    }
+
+    h2, h3, h4 {
+        font-size: 90%;
+    }
 }
