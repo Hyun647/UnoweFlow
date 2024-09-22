@@ -298,7 +298,6 @@ h2 {
 .todo-section h4 {
     margin-top: 20px;
     margin-bottom: 10px;
-    color: var(--primary-color);
     font-size: 16px;
 }
 
@@ -420,13 +419,6 @@ h2 {
 .assignee-progress .progress-bar {
     height: 100%;
     background-color: var(--progress-color);
-}
-
-.todo-section h4 {
-    margin-top: 20px;
-    margin-bottom: 10px;
-    color: var(--primary-color);
-    font-size: 16px;
 }
 
 #priority-todo-list {
