@@ -175,6 +175,7 @@ function showProjectDetails(projectId) {
                 <h4>전체 할 일 목록</h4>
                 <div id="todo-list"></div>
             </div>
+            <button id="back-to-dashboard" class="btn-back">프로젝트 대시보드로 이동</button>
         </div>
     `;
 
@@ -214,6 +215,10 @@ function showProjectDetails(projectId) {
     if (window.innerWidth <= 768) {
         closeSidebar();
     }
+
+    document.getElementById('back-to-dashboard').addEventListener('click', () => {
+        showProjectList();
+    });
 }
 
 function getCurrentProjectId() {

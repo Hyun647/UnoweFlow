@@ -459,6 +459,21 @@ function deleteProject(projectId) {
     console.log(`프로젝트 삭제: ${projectId}`);
 }
 
+function hideAllSections() {
+    const sections = document.querySelectorAll('main > div');
+    sections.forEach(section => {
+        section.style.display = 'none';
+    });
+}
+
+function showSection(sectionId) {
+    hideAllSections();
+    const section = document.getElementById(sectionId);
+    if (section) {
+        section.style.display = 'block';
+    }
+}
+
 // 전역 스코프에 함수들을 노출
 window.initializeMainPage = initializeMainPage;
 window.toggleSidebar = toggleSidebar;
@@ -467,3 +482,5 @@ window.addProject = addProject;
 window.showProjectDetails = showProjectDetails;
 window.editProject = editProject;
 window.deleteProject = deleteProject;
+window.hideAllSections = hideAllSections;
+window.showSection = showSection;
