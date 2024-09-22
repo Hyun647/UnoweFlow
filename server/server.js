@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
 const cors = require('cors');
+const mysql = require('mysql2/promise');  // 이 줄을 추가하세요
 const PORT = process.env.PORT || 6521;
 
 const app = express();
@@ -36,7 +37,7 @@ async function checkDatabaseConnection() {
         connection.release();
     } catch (err) {
         console.error('데이터베이스 연결 중 오류 발생:', err);
-        console.log('5초 후 재연결을 시��합니다...');
+        console.log('5초 후 재연결을 시도합니다...');
         setTimeout(checkDatabaseConnection, 5000);
     }
 }
@@ -114,9 +115,9 @@ async function loadAllData() {
             memosData[memo.project_id.toString()] = memo.content;
         });
 
-        console.log('모든 데이터가 메모리에 로드되었습니다.');
+        console.log('모든 데이터가 메모리�� 로드되었습니다.');
     } catch (error) {
-        console.error('데이터 로 중 오류 발생:', error);
+        console.error('데이터 로드 중 오류 발생:', error);
         console.log('5초 후 데이터 로드를 재시도합니다...');
         setTimeout(loadAllData, 5000);
     }
@@ -222,7 +223,7 @@ async function updateProject(project) {
         // 프로젝트 존재 여부 확인
         const existingProjects = await query('SELECT * FROM projects WHERE id = ?', [project.id.toString()]);
         if (existingProjects.length === 0) {
-            console.error('업데�����할 프로젝트를 찾을 수 없습니다:', project.id);
+            console.error('업데이트할 프로젝트를 찾을 수 없습니다:', project.id);
             return;
         }
 
@@ -356,7 +357,7 @@ async function updateTodo(projectId, updatedTodo) {
         // 할 일이 존재하는지 먼저 확인
         const existingTodos = await query('SELECT * FROM todos WHERE id = ?', [todoId]);
         if (existingTodos.length === 0) {
-            console.error('업데이��할 할 일을 찾을 수 없습니다:', todoId);
+            console.error('업데이트할 할 일을 찾을 수 없습니다:', todoId);
             return;
         }
 
