@@ -530,11 +530,6 @@ h2 {
     border-radius: 4px;
 }
 
-/* 삭제 버튼 스타일 */
-.delete-btn {
-    background-color: var(--error-color);
-    color: white;
-}
 
 /* 닫기 버튼 스타일 */
 .close-btn {
@@ -585,6 +580,7 @@ h2 {
 .delete-btn:hover, button.delete-btn:hover, .button.delete-btn:hover {
     background-color: var(--error-color);
     color: white;
+    border-color: var(--error-color);
 }
 
 /* 모달 내 삭제 버튼 스타일 일관성 유지 */
@@ -597,6 +593,7 @@ h2 {
 .modal-content .delete-btn:hover {
     background-color: var(--error-color);
     color: white;
+    border-color: var(--error-color);
 }
 
 /* 모달 닫기 버튼 스타일 */
@@ -913,6 +910,19 @@ textarea:focus {
 .delete-btn {
     background-color: var(--error-color);
     color: white;
+    border: 1px solid var(--error-color);
+    padding: 6px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.delete-btn:hover {
+    background-color: var(--error-color);
+    color: white;
+    border-color: var(--error-color);
 }
 
 /* 닫기 버튼 스타일 */
