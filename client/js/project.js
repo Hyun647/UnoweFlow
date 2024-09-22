@@ -127,7 +127,7 @@ function showProjectDetails(projectId) {
                 <div class="project-actions">
                     <button onclick="showMemo('${project.id}')" class="button">메모장</button>
                     <button onclick="showManageAssigneesModal('${project.id}')" class="button">담당자 관리</button>
-                    <button onclick="showProjectSettingsModal('${project.id}')" class="button">프로젝트 설정</button>
+                    <button onclick="showProjectSettingsModal('${project.id}')" class="button">��로젝트 설정</button>
                 </div>
             </div>
             <div class="project-stats">
@@ -175,7 +175,7 @@ function showProjectDetails(projectId) {
                 <h4>전체 할 일 목록</h4>
                 <div id="todo-list"></div>
             </div>
-            <button id="back-to-dashboard" class="btn-back">프로젝트 대시보드로 이동</button>
+            <button id="back-to-dashboard" class="btn-back" onclick="showProjectList()">프로젝트 대시보드로 이동</button>
         </div>
     `;
 
@@ -211,14 +211,10 @@ function showProjectDetails(projectId) {
         projectDetailsContainer.scrollTop = 0; // 스크롤을 맨 위로 이동
     }
 
-    // 모바일에서 사이드바가 열려있다면 닫기
+    // 모바일에서 ���이드바가 열려있다면 닫기
     if (window.innerWidth <= 768) {
         closeSidebar();
     }
-
-    document.getElementById('back-to-dashboard').addEventListener('click', () => {
-        showProjectList();
-    });
 }
 
 function getCurrentProjectId() {
@@ -429,5 +425,35 @@ function updateFilterOptions(projectId) {
     }
 }
 
+function showProjectList() {
+    const mainContentElement = document.getElementById('main-content');
+    if (!mainContentElement) {
+        console.error('main-content 요소를 찾을 수 없습니다.');
+        return;
+    }
+    
+    // 프로젝트 목록 페이지 HTML 생성
+    mainContentElement.innerHTML = `
+        <div id="project-dashboard">
+            <h2>프로젝트 목록</h2>
+            <div id="project-list-container"></div>
+        </div>
+    `;
+    
+    // 프로젝트 목록 업데이트
+    updateProjectList();
+    
+    // 사이드바 열기 및 콘텐츠 영역 조정
+    const sidebar = document.querySelector('.sidebar');
+    const content = document.querySelector('.content');
+    if (sidebar && content) {
+        sidebar.classList.add('open');
+        content.classList.add('sidebar-open');
+        content.style.marginLeft = '250px';
+        content.style.width = 'calc(100% - 250px)';
+    }
+}
+
 // 전역 스코프에 함수 노출
 window.showProjectDetails = showProjectDetails;
+window.showProjectList = showProjectList;
