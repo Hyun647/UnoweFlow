@@ -106,43 +106,6 @@ main {
     margin-left: 250px;
 }
 
-/* 반응형 디자인 개선 */
-@media screen and (max-width: 768px) {
-    .sidebar {
-        width: 250px;
-        left: -250px;
-        top: 50px; /* 모바일 헤더 높 맞춤 */
-        height: calc(100vh - 50px);
-        z-index: 1000;
-    }
-
-    .sidebar.open {
-        transform: translateX(250px);
-    }
-
-    .content {
-        margin-left: 0;
-        padding: 10px;
-        transition: transform var(--transition-duration) ease;
-    }
-
-    .content.sidebar-open {
-        transform: translateX(250px);
-    }
-
-    body.sidebar-open {
-        overflow: hidden;
-    }
-
-    .hamburger-menu {
-        padding-left: 10px; /* 모바일에서는 왼쪽 여백을 줄입니다 */
-    }
-
-    .header-content {
-        padding: 0 10px; /* 모바일에서는 헤더 패딩을 줄입니다 */
-    }
-}
-
 h2 {
     font-size: 20px;
     font-weight: 600;
