@@ -211,7 +211,7 @@ function showProjectDetails(projectId) {
         projectDetailsContainer.scrollTop = 0; // 스크롤을 맨 위로 이동
     }
 
-    // 모바일에서 ���이드바가 열려있다면 닫기
+    // 모바일에서 이드바가 열려있다면 닫기
     if (window.innerWidth <= 768) {
         closeSidebar();
     }
@@ -453,6 +453,61 @@ function showProjectList() {
         content.style.width = 'calc(100% - 250px)';
     }
 }
+
+function updateProjectList() {
+    const projectListElement = document.getElementById('project-list');
+    const projectListContainer = document.getElementById('project-list-container');
+    if (!projectListElement && !projectListContainer) {
+        console.error('프로젝트 목록 요소를 찾을 수 없습니다.');
+        return;
+    }
+
+    let projectListHTML = '';
+    projects.forEach(project => {
+        projectListHTML += `
+            <li id="project-${project.id}" class="project-item">
+                <span class="project-name" onclick="showProjectDetails('${project.id}')">${project.name || '이름 없음'}</span>
+                <div class="project-actions">
+                    <button onclick="renameProject('${project.id}')" class="btn-rename">이름 변경</button>
+                    <button onclick="deleteProject('${project.id}')" class="btn-delete">삭제</button>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" style="width: ${project.progress || 0}%"></div>
+                    <span class="progress-text">${project.progress || 0}%</span>
+                </div>
+            </li>
+        `;
+    });
+
+    if (projectListElement) {
+        projectListElement.innerHTML = projectListHTML;
+    }
+    if (projectListContainer) {
+        projectListContainer.innerHTML = projectListHTML;
+    }
+}
+
+function searchProjects() {
+    const searchTerm = document.getElementById('project-search').value.toLowerCase();
+    const projectItems = document.querySelectorAll('.project-item');
+
+    projectItems.forEach(item => {
+        const projectName = item.querySelector('.project-name').textContent.toLowerCase();
+        if (projectName.includes(searchTerm)) {
+            item.style.display = '';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+// 이벤트 리스너 추가
+document.addEventListener('DOMContentLoaded', () => {
+    const projectSearch = document.getElementById('project-search');
+    if (projectSearch) {
+        projectSearch.addEventListener('input', searchProjects);
+    }
+});
 
 // 전역 스코프에 함수 노출
 window.showProjectDetails = showProjectDetails;
