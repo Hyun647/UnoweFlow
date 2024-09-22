@@ -1,35 +1,57 @@
 /* 모바일 기기를 위한 미디어 쿼리 */
 @media screen and (max-width: 768px) {
-    
-    /* 전체 폰트 사이즈 축소 */
+    /* 기본 스타일 */
     body {
         font-size: 12px;
     }
 
-    /* 프로젝트 관리 섹션 */
-    #project-management {
-        flex-direction: column;
-        gap: 10px;
+    .container {
+        padding: 10px;
     }
 
-    #project-input-container {
-        flex-direction: column;
-        gap: 10px;
+    .section {
+        margin-bottom: 15px;
     }
 
-    /* 할 일 입력 및 필터 */
-    #todo-input, .todo-filters {
-        flex-direction: column;
-        gap: 10px;
+    /* 타이포그래피 */
+    h2, h3, h4 {
+        font-size: 80%;
     }
 
-    #todo-input input,
-    #todo-input select,
-    .todo-filters select,
-    #todo-search {
+    /* 입력 요소 및 버튼 */
+    button, select, input {
+        font-size: 11px;
+        padding: 6px;
         width: 100%;
         box-sizing: border-box;
-        font-size: 12px;
+    }
+
+    /* 프로젝트 관리 */
+    #project-management,
+    #project-input-container,
+    #todo-input,
+    .todo-filters {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* 프로젝트 헤더 */
+    .project-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .project-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        margin-top: 5px;
+    }
+
+    .project-actions button {
+        font-size: 10px;
+        padding: 4px 8px;
+        margin: 2px;
     }
 
     /* 테이블 스타일 */
@@ -45,49 +67,10 @@
         padding: 4px;
     }
 
-    /* 버튼 및 기타 요소 폰트 사이즈 조정 */
-    button, select, input {
-        font-size: 11px;
-        padding: 6px;
-    }
-
-    h2, h3, h4 {
-        font-size: 80%;
-    }
-
-    /* 추가: 여백 및 간격 조정 */
-    .container {
-        padding: 10px;
-    }
-
-    .section {
-        margin-bottom: 15px;
-    }
-
-    /* 프로젝트 상세 정보 버튼 크기 조정 */
+    /* 프로젝트 상세 정보 */
     #project-details button {
         font-size: 10px;
         padding: 4px 8px;
         margin: 2px;
-    }
-
-    /* 프로젝트 헤더 버튼 크기 조정 */
-    .project-actions button {
-        font-size: 10px;
-        padding: 4px 8px;
-        margin: 2px;
-    }
-
-    /* 프로젝트 헤더 레이아웃 조정 */
-    .project-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .project-actions {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: flex-start;
-        margin-top: 5px;
     }
 }
