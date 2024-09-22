@@ -3,7 +3,7 @@
     
     /* 전체 폰트 사이즈 축소 */
     body {
-        font-size: 14px;
+        font-size: 12px;
     }
 
     /* 프로젝트 관리 섹션 */
@@ -34,7 +34,7 @@
 
     /* 테이블 스타일 */
     .todo-table {
-        font-size: 11px;
+        font-size: 10px;
         display: block;
         overflow-x: auto;
         white-space: nowrap;
@@ -42,15 +42,25 @@
 
     .todo-table th,
     .todo-table td {
-        padding: 6px;
+        padding: 4px;
     }
 
     /* 버튼 및 기타 요소 폰트 사이즈 조정 */
     button, select, input {
-        font-size: 12px;
+        font-size: 11px;
+        padding: 6px;
     }
 
     h2, h3, h4 {
-        font-size: 90%;
+        font-size: 80%;
+    }
+
+    /* 추가: 여백 및 간격 조정 */
+    .container {
+        padding: 10px;
+    }
+
+    .section {
+        margin-bottom: 15px;
     }
 }
