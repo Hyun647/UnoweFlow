@@ -3,40 +3,38 @@ let projects = [];
 let todos = {};
 let projectAssignees = {};
 
-function initializeMainPage() {
+function initializeMainPage(authenticatedSocket) {
     console.log('메인 페이지 초기화');
-    initializeWebSocket();
+    socket = authenticatedSocket;
+    setupWebSocketHandlers();
     showProjectList();
     setupEventListeners();
+    requestFullStateUpdate();
 }
 
-function initializeWebSocket() {
-    console.log('WebSocket 연결 시도...');
-    socket = new WebSocket('ws:/110.15.29.199:6521');
-
-    socket.onopen = () => {
-        console.log('WebSocket이 연결되었습니다.');
-        requestFullStateUpdate();
-    };
-
+function setupWebSocketHandlers() {
     socket.onmessage = (event) => {
-        console.log('WebSocket 메시지 수신:', event.data); // 원본 메시지 로깅
+        console.log('WebSocket 메시지 수신:', event.data);
         const data = JSON.parse(event.data);
         handleWebSocketMessage(data);
     };
 
     socket.onclose = (event) => {
         console.log('WebSocket 연결이 끊어졌습니다.');
-        setTimeout(initializeWebSocket, 3000);
+        // 재연결 로직 구현 (필요한 경우)
     };
 
     socket.onerror = (error) => {
-        console.error('WebSocket 연결 오류');
+        console.error('WebSocket 연결 오류:', error);
     };
 }
 
 function requestFullStateUpdate() {
-    socket.send(JSON.stringify({ type: 'REQUEST_FULL_STATE' }));
+    if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: 'REQUEST_FULL_STATE' }));
+    } else {
+        console.error('WebSocket이 열려있지 않습니다. 상태 업데이트를 요청할 수 없습니다.');
+    }
 }
 
 function handleWebSocketMessage(data) {

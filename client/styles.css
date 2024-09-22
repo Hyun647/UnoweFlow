@@ -185,6 +185,11 @@ h2 {
     background-color: var(--card-bg-color);
     border: 1px solid var(--border-color);
     border-radius: 6px;
+    transition: border-color 0.3s ease;
+}
+
+.project-item:hover {
+    border-color: var(--primary-color);
 }
 
 .project-item .project-header {

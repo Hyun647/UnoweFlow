@@ -34,7 +34,7 @@ function showMainContent() {
     document.querySelector('header').style.display = 'block';
     document.querySelector('main').style.display = 'flex';
     if (typeof window.initializeMainPage === 'function') {
-        window.initializeMainPage();
+        window.initializeMainPage(authSocket);
     } else {
         console.error('initializeMainPage 함수를 찾을 수 없습니다.');
     }
