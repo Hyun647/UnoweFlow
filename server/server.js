@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
 const cors = require('cors');
-const mysql = require('mysql2/promise');  // 이 줄을 추가하세요
+const mysql = require('mysql2/promise'); 
 const PORT = process.env.PORT || 6521;
 
 const app = express();
@@ -115,7 +115,7 @@ async function loadAllData() {
             memosData[memo.project_id.toString()] = memo.content;
         });
 
-        console.log('모든 데이터가 메모리�� 로드되었습니다.');
+        console.log('모든 데이터가 메모리 로드되었습니다.');
     } catch (error) {
         console.error('데이터 로드 중 오류 발생:', error);
         console.log('5초 후 데이터 로드를 재시도합니다...');
