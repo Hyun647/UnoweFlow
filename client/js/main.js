@@ -326,7 +326,7 @@ function updateTodoList(projectId) {
             li.innerHTML = `
                 <input type="checkbox" ${todo.completed ? 'checked' : ''} onchange="toggleTodoComplete('${projectId}', '${todo.id}')">
                 <span class="${todo.completed ? 'completed' : ''}">${todo.text}</span>
-                <span class="assignee">${todo.assignee || '미배정'}</span>
+                <span class="assignee">${todo.assignee || '미지정'}</span>
                 <span class="priority">${todo.priority}</span>
                 <input type="date" class="todo-due-date" value="${dueDateValue}" onchange="updateTodoDueDate('${projectId}', '${todo.id}', this.value)">
                 <button onclick="editTodo('${projectId}', '${todo.id}')">수정</button>

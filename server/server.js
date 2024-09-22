@@ -131,6 +131,8 @@ const PASSWORD = '2024'; // 서버 측 비밀번호 설정
 wss.on('connection', async (ws) => {
     console.log('클라이언트가 연결되었습니다.');
     
+    let isAuthenticated = false; // 인증 상태 추적 플래그
+    
     ws.on('message', async (message) => {
         try {
             const data = JSON.parse(message);
@@ -138,6 +140,7 @@ wss.on('connection', async (ws) => {
 
             if (data.type === 'auth') {
                 if (data.password === PASSWORD) {
+                    isAuthenticated = true; // 인증 성공 시 플래그 설정
                     ws.send(JSON.stringify({ type: 'auth_result', success: true }));
                     // 인증 성공 후 전체 상태 업데이트 전송
                     await loadAllData();
@@ -145,7 +148,7 @@ wss.on('connection', async (ws) => {
                 } else {
                     ws.send(JSON.stringify({ type: 'auth_result', success: false }));
                 }
-            } else {
+            } else if (isAuthenticated) { // 인증된 클라이언트만 처리
                 // 기존의 다른 메시지 처리 로직
                 switch (data.type) {
                     case 'ADD_PROJECT':
@@ -188,7 +191,12 @@ wss.on('connection', async (ws) => {
                     case 'UPDATE_MEMO':
                         await updateMemo(data.projectId, data.content);
                         break;
+                    case 'REQUEST_FULL_STATE':
+                        sendFullStateUpdate(ws);
+                        break;
                 }
+            } else {
+                ws.send(JSON.stringify({ type: 'error', message: '인증되지 않은 클라이언트의 요청은 무시됩니다.' }));
             }
         } catch (error) {
             console.error('메시지 처리 중 오류 발생:', error);
@@ -332,10 +340,10 @@ async function addTodo(projectId, text, assignee, priority, dueDate) {
 
         const result = await query(
             'INSERT INTO todos (project_id, text, assignee, priority, due_date) VALUES (?, ?, ?, ?, ?)',
-            [projectId.toString(), text, assignee, priority, formattedDueDate]
+            [projectId.toString(), text, assignee || null, priority, formattedDueDate]
         );
         const todoId = result.insertId;
-        const newTodo = { id: todoId.toString(), projectId: projectId.toString(), text, assignee, priority, dueDate: formattedDueDate, completed: false };
+        const newTodo = { id: todoId.toString(), projectId: projectId.toString(), text, assignee: assignee || null, priority, dueDate: formattedDueDate, completed: false };
         broadcastToAll({ type: 'TODO_ADDED', projectId: projectId.toString(), todo: newTodo });
         return newTodo;
     } catch (error) {
@@ -370,9 +378,9 @@ async function updateTodo(projectId, updatedTodo) {
             return;
         }
 
-        // 데이트 쿼리 실행
+        // 업데이트 쿼리 실행
         await query('UPDATE todos SET text = ?, completed = ?, assignee = ?, priority = ?, due_date = ? WHERE id = ?', 
-            [updatedTodo.text || '', updatedTodo.completed ? 1 : 0, updatedTodo.assignee || '', updatedTodo.priority || '', dueDate, todoId]);
+            [updatedTodo.text || '', updatedTodo.completed ? 1 : 0, updatedTodo.assignee || null, updatedTodo.priority || '', dueDate, todoId]);
         
         // 업데이트된 할 일 조회
         const updatedTodos = await query('SELECT * FROM todos WHERE id = ?', [todoId]);
@@ -389,7 +397,7 @@ async function updateTodo(projectId, updatedTodo) {
             projectId: todo.project_id.toString(),
             text: todo.text,
             completed: todo.completed === 1,
-            assignee: todo.assignee,
+            assignee: todo.assignee || null,
             priority: todo.priority,
             dueDate: todo.due_date
         };

@@ -259,7 +259,7 @@ function createTodoRow(todo, projectId) {
         </td>
         <td data-label="담자">
             <select class="todo-assignee" onchange="updateTodoAssignee('${todo.id}', this.value)">
-                <option value="">담당자 없음</option>
+                <option value="">미지정</option>
                 ${getAssigneeOptions(projectId, todo.assignee)}
             </select>
         </td>
