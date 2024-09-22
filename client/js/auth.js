@@ -14,6 +14,7 @@ function connectAuthWebSocket() {
                 showMainContent();
             } else {
                 alert('비밀번호가 틀렸습니다.');
+                document.getElementById('password').value = ''; // 비밀번호 입력 필드 초기화
             }
         }
     };
@@ -44,6 +45,15 @@ window.onload = () => {
     connectAuthWebSocket();
     document.querySelector('header').style.display = 'none';
     document.querySelector('main').style.display = 'none';
+    
+    // 비밀번호 입력 필드에 이벤트 리스너 추가
+    const passwordInput = document.getElementById('password');
+    passwordInput.addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // 기본 제출 동작 방지
+            authenticate();
+        }
+    });
 };
 
 // 전역 스코프에 함수 노출
