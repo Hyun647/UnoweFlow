@@ -70,4 +70,24 @@
         padding: 4px 8px;
         margin: 2px;
     }
+
+    /* 프로젝트 헤더 버튼 크기 조정 */
+    .project-actions button {
+        font-size: 10px;
+        padding: 4px 8px;
+        margin: 2px;
+    }
+
+    /* 프로젝트 헤더 레이아웃 조정 */
+    .project-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .project-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        margin-top: 5px;
+    }
 }
