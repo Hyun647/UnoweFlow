@@ -21,7 +21,12 @@ function connectWebSocket() {
 
 function authenticate() {
     const password = document.getElementById('password').value;
-    socket.send(JSON.stringify({ type: 'auth', password }));
+    if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: 'auth', password }));
+    } else {
+        console.error('WebSocket is not open');
+        alert('서버 연결에 문제가 있습니다. 페이지를 새로고침 해주세요.');
+    }
 }
 
 function showMainPage() {

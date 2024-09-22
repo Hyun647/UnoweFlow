@@ -126,60 +126,69 @@ async function loadAllData() {
 // 서버 시작 시 데이터 로드
 loadAllData();
 
-// WebSocket 연결 설정
+const PASSWORD = '2024'; // 서버 측 비밀번호 설정
+
 wss.on('connection', async (ws) => {
     console.log('클라이언트가 연결되었습니다.');
     
-    // 클라이언트 연결 시 데이터 다시 로드
-    await loadAllData();
-    sendFullStateUpdate(ws);
-
     ws.on('message', async (message) => {
         try {
             const data = JSON.parse(message);
             console.log('클라이언트로부터 메시지 수신:', data);
 
-            switch (data.type) {
-                case 'ADD_PROJECT':
-                    await addProject(data.name);
-                    break;
-                case 'UPDATE_PROJECT':
-                    await updateProject(data.project);
-                    break;
-                case 'DELETE_PROJECT':
-                    await deleteProject(data.projectId);
-                    break;
-                case 'ADD_TODO':
-                    await addTodo(data.projectId, data.text, data.assignee, data.priority, data.dueDate);
-                    break;
-                case 'UPDATE_TODO':
-                    if (!data.projectId || !data.todo) {
-                        console.error('UPDATE_TODO: 잘못된 데이터 형식', data);
-                        return;
-                    }
-                    await updateTodo(data.projectId, data.todo);
-                    break;
-                case 'DELETE_TODO':
-                    await deleteTodo(data.projectId, data.todoId);
-                    break;
-                case 'ADD_ASSIGNEE':
-                    await addAssignee(data.projectId, data.assigneeName);
-                    break;
-                case 'DELETE_ASSIGNEE':
-                    await deleteAssignee(data.projectId, data.assigneeName);
-                    break;
-                case 'GET_MEMO':
-                    const memo = await getMemo(data.projectId);
-                    console.log('GET_MEMO 응답:', { type: 'MEMO_UPDATE', projectId: data.projectId, content: memo });
-                    ws.send(JSON.stringify({
-                        type: 'MEMO_UPDATE',
-                        projectId: data.projectId,
-                        content: memo
-                    }));
-                    break;
-                case 'UPDATE_MEMO':
-                    await updateMemo(data.projectId, data.content);
-                    break;
+            if (data.type === 'auth') {
+                if (data.password === PASSWORD) {
+                    ws.send(JSON.stringify({ type: 'auth_result', success: true }));
+                    // 인증 성공 후 전체 상태 업데이트 전송
+                    await loadAllData();
+                    sendFullStateUpdate(ws);
+                } else {
+                    ws.send(JSON.stringify({ type: 'auth_result', success: false }));
+                }
+            } else {
+                // 기존의 다른 메시지 처리 로직
+                switch (data.type) {
+                    case 'ADD_PROJECT':
+                        await addProject(data.name);
+                        break;
+                    case 'UPDATE_PROJECT':
+                        await updateProject(data.project);
+                        break;
+                    case 'DELETE_PROJECT':
+                        await deleteProject(data.projectId);
+                        break;
+                    case 'ADD_TODO':
+                        await addTodo(data.projectId, data.text, data.assignee, data.priority, data.dueDate);
+                        break;
+                    case 'UPDATE_TODO':
+                        if (!data.projectId || !data.todo) {
+                            console.error('UPDATE_TODO: 잘못된 데이터 형식', data);
+                            return;
+                        }
+                        await updateTodo(data.projectId, data.todo);
+                        break;
+                    case 'DELETE_TODO':
+                        await deleteTodo(data.projectId, data.todoId);
+                        break;
+                    case 'ADD_ASSIGNEE':
+                        await addAssignee(data.projectId, data.assigneeName);
+                        break;
+                    case 'DELETE_ASSIGNEE':
+                        await deleteAssignee(data.projectId, data.assigneeName);
+                        break;
+                    case 'GET_MEMO':
+                        const memo = await getMemo(data.projectId);
+                        console.log('GET_MEMO 응답:', { type: 'MEMO_UPDATE', projectId: data.projectId, content: memo });
+                        ws.send(JSON.stringify({
+                            type: 'MEMO_UPDATE',
+                            projectId: data.projectId,
+                            content: memo
+                        }));
+                        break;
+                    case 'UPDATE_MEMO':
+                        await updateMemo(data.projectId, data.content);
+                        break;
+                }
             }
         } catch (error) {
             console.error('메시지 처리 중 오류 발생:', error);
