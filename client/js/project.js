@@ -244,22 +244,22 @@ function showManageAssigneesModal(projectId) {
         assigneeListHTML += `
             <li>
                 ${assignee}
-                <button onclick="deleteAssignee('${projectId}', '${assignee}')" class="button delete-btn">삭제</button>
+                <button onclick="deleteAssignee('${projectId}', '${assignee}')" class="delete-btn">삭제</button>
             </li>
         `;
     });
 
     modal.innerHTML = `
         <div class="modal-content">
-            <h3 style="color: white;">담당자 관리</h3>
+            <h3>담당자 관리</h3>
             <ul id="assignee-list">
                 ${assigneeListHTML}
             </ul>
             <div class="add-assignee-form">
-                <input type="text" id="new-assignee-name" placeholder="담당자 이름">
-                <button onclick="addNewAssignee('${projectId}')" class="button">담당자 추가</button>
+                <input type="text" id="new-assignee-name" placeholder="새 담당자 이름">
+                <button onclick="addNewAssignee('${projectId}')" class="add-btn">추가</button>
             </div>
-            <button onclick="closeModal()" class="button close-btn">닫기</button>
+            <button onclick="closeModal()" class="close-btn">닫기</button>
         </div>
     `;
     document.body.appendChild(modal);
@@ -314,7 +314,7 @@ function updateAssigneeListInModal(projectId) {
         assigneeListHTML += `
             <li>
                 ${assignee}
-                <button onclick="deleteAssignee('${projectId}', '${assignee}')" class="button delete-btn">삭제</button>
+                <button onclick="deleteAssignee('${projectId}', '${assignee}')" class="delete-btn">삭제</button>
             </li>
         `;
     });
@@ -367,16 +367,13 @@ function showProjectSettingsModal(projectId) {
     modal.className = 'modal';
     modal.innerHTML = `
         <div class="modal-content">
-            <h3 style="color: white;">프로젝트 설정</h3>
-            <div class="form-group" style="width: 100%;">
-                <label for="project-name">프로젝트 이름:</label>
-                <input type="text" id="project-name" value="${project.name}" style="width: 100%; box-sizing: border-box;">
+            <h3>프로젝트 설정</h3>
+            <div class="project-name-form">
+                <input type="text" id="project-name" value="${project.name}" placeholder="프로젝트 이름">
+                <button onclick="updateProjectName('${projectId}')" class="add-btn">변경</button>
             </div>
-            <div class="button-group">
-                <button onclick="updateProjectName('${projectId}')" class="button">이름 변경</button>
-                <button onclick="deleteProjectConfirm('${projectId}')" class="button delete-btn">프로젝트 삭제</button>
-            </div>
-            <button onclick="closeModal()" class="button close-btn">닫기</button>
+            <button onclick="deleteProjectConfirm('${projectId}')" class="delete-btn">프로젝트 삭제</button>
+            <button onclick="closeModal()" class="close-btn">닫기</button>
         </div>
     `;
     document.body.appendChild(modal);
