@@ -50,16 +50,23 @@ function updateProjectInUI(project) {
         }
     }
 
-    // 프로젝트 상세 페이지 업데이트
-    const projectStatistics = document.getElementById('project-statistics');
-    if (projectStatistics) {
-        const progressBar = projectStatistics.querySelector('.project-progress-bar');
-        const progressText = projectStatistics.querySelector('.project-progress-text');
-        if (progressBar && progressText) {
-            const progress = project.progress || 0;
-            progressBar.style.width = `${progress}%`;
-            progressText.textContent = `${progress}%`;
-        }
+    // 프로젝트 상세 정보 업데이트
+    updateProjectDetailsView(project);
+
+    // 사이드바의 프로젝트 목록 업데이트
+    updateSidebarProjectList(project);
+}
+
+function updateSidebarProjectList(project) {
+    const sidebarProjectItem = document.querySelector(`.sidebar .project-item[id="project-${project.id}"]`);
+    if (sidebarProjectItem) {
+        const nameElement = sidebarProjectItem.querySelector('.project-name');
+        const progressBar = sidebarProjectItem.querySelector('.progress-bar');
+        const progressText = sidebarProjectItem.querySelector('.progress-text');
+        
+        if (nameElement) nameElement.textContent = project.name || '이름 없음';
+        if (progressBar) progressBar.style.width = `${project.progress || 0}%`;
+        if (progressText) progressText.textContent = `${project.progress || 0}%`;
     }
 }
 
@@ -383,17 +390,22 @@ function showProjectSettingsModal(projectId) {
 function updateProjectName(projectId) {
     const newName = document.getElementById('project-name').value.trim();
     if (newName) {
-        socket.send(JSON.stringify({
-            type: 'UPDATE_PROJECT',
-            project: { id: projectId, name: newName }
-        }));
-        closeModal();
-        
-        // 즉시 UI 업데이트
         const project = projects.find(p => p.id === projectId);
         if (project) {
-            project.name = newName;
-            updateProjectInUI(project);
+            // 기존 프로젝트 정보를 유지하면서 이름만 업데이트
+            const updatedProject = {
+                ...project,
+                name: newName
+            };
+            
+            socket.send(JSON.stringify({
+                type: 'UPDATE_PROJECT',
+                project: updatedProject
+            }));
+            closeModal();
+            
+            // 즉시 UI 업데이트
+            updateProjectInUI(updatedProject);
             updateProjectList();
         }
     } else {
