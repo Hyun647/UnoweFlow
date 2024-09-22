@@ -111,7 +111,7 @@ async function loadAllData() {
 
 loadAllData();
 
-const PASSWORD = '2024';
+const PASSWORD = '1590';
 
 wss.on('connection', async (ws) => {
     console.log('클라이언트 연결');
