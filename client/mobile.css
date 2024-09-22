@@ -45,16 +45,6 @@
         padding: 4px;
     }
 
-    /* 버튼 및 기타 요소 폰트 사이즈 조정 */
-    button, select, input {
-        font-size: 11px;
-        padding: 6px;
-    }
-
-    h2, h3, h4 {
-        font-size: 80%;
-    }
-
     /* 추가: 여백 및 간격 조정 */
     .container {
         padding: 10px;
@@ -66,13 +56,6 @@
 
     /* 프로젝트 상세 정보 버튼 크기 조정 */
     #project-details button {
-        font-size: 10px;
-        padding: 4px 8px;
-        margin: 2px;
-    }
-
-    /* 프로젝트 헤더 버튼 크기 조정 */
-    .project-actions button {
         font-size: 10px;
         padding: 4px 8px;
         margin: 2px;
