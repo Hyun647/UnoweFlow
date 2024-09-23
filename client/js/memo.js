@@ -1,5 +1,8 @@
 let currentProjectId = null;
 let isEditorVisible = false; // 기본값을 false로 유지
+let isTyping = false;
+let typingTimer;
+const TYPING_INTERVAL = 2000; // 2초
 
 function showMemo(projectId) {
     currentProjectId = projectId;
@@ -114,8 +117,12 @@ function updateMemo(content) {
     const memoTextarea = document.getElementById('memo');
     const contentContainer = document.getElementById('content-container');
     if (memoTextarea && contentContainer) {
-        memoTextarea.value = content;
-        renderContent(content);
+        if (!isTyping) {
+            memoTextarea.value = content;
+            renderContent(content);
+        } else {
+            console.log('사용자가 입력 중이어서 메모 업데이트를 건너뜁니다.');
+        }
     } else {
         console.error('메모 텍스트 영역 또는 컨텐츠 컨테이너를 찾을 수 없습니다.');
     }
@@ -146,10 +153,17 @@ function renderContent(content) {
 // 메모 입력 이벤트 처리
 document.addEventListener('input', function(e) {
     if (e.target && e.target.id === 'memo') {
+        isTyping = true;
+        clearTimeout(typingTimer);
         clearTimeout(e.target.timeout);
+        
         e.target.timeout = setTimeout(() => {
             saveMemo();
         }, 300); // 타이핑 후 300ms 후에 저장
+
+        typingTimer = setTimeout(() => {
+            isTyping = false;
+        }, TYPING_INTERVAL);
     }
 });
 
@@ -157,7 +171,16 @@ document.addEventListener('input', function(e) {
 function handleMemoUpdate(data) {
     console.log('서버로부터 메모 업데이트 수신:', data);
     if (data.projectId === currentProjectId) {
-        updateMemo(data.content);
+        if (!isTyping) {
+            updateMemo(data.content);
+        } else {
+            console.log('사용자가 입력 중이어서 서버 업데이트를 연기합니다.');
+            setTimeout(() => {
+                if (!isTyping) {
+                    updateMemo(data.content);
+                }
+            }, TYPING_INTERVAL);
+        }
     } else {
         console.log('현재 프로젝트와 일치하지 않는 메모 업데이트:', data);
     }
