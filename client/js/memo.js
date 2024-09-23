@@ -9,6 +9,7 @@ function showMemo(projectId) {
     const project = projects.find(p => p.id === projectId);
     const projectName = project ? project.name : '알 수 없는 프로젝트';
     
+    // 메모 UI 구성
     const mainContent = document.getElementById('main-content');
     mainContent.innerHTML = `
         <div id="memo-container">
@@ -86,6 +87,7 @@ function applyMemoStyles() {
 }
 
 function toggleEditor() {
+    // 에디터 토글 기능 구현
     const memoEditor = document.getElementById('memo-editor');
     const contentContainer = document.getElementById('content-container');
     const toggleButton = document.getElementById('toggle-editor');
@@ -93,11 +95,13 @@ function toggleEditor() {
     isEditorVisible = !isEditorVisible;
     
     if (isEditorVisible) {
+        // 에디터 표시 및 레이아웃 조정
         memoEditor.style.display = 'block';
         memoEditor.style.width = '50%';
         contentContainer.style.width = '50%';
         toggleButton.textContent = '에디터 숨기기';
     } else {
+        // 에디터 숨김 및 레이아웃 조정
         memoEditor.style.display = 'none';
         contentContainer.style.width = '100%';
         toggleButton.textContent = '에디터 보이기';
@@ -118,6 +122,7 @@ function updateMemo(content) {
     const contentContainer = document.getElementById('content-container');
     if (memoTextarea && contentContainer) {
         if (!isTyping) {
+            // 사용자가 입력 중이 아닐 때만 메모 업데이트
             memoTextarea.value = content;
             renderContent(content);
         } else {
@@ -152,16 +157,23 @@ function renderContent(content) {
 
 // 메모 입력 이벤트 처리
 document.addEventListener('input', function(e) {
+    // 입력 대상이 'memo' ID를 가진 요소인지 확인
     if (e.target && e.target.id === 'memo') {
+        // 사용자가 입력 중임을 표시
         isTyping = true;
+        
+        // 이전에 설정된 타이머들을 초기화
         clearTimeout(typingTimer);
         clearTimeout(e.target.timeout);
         
+        // 타이핑 후 300ms 후에 저장 함수 실행
         e.target.timeout = setTimeout(() => {
             saveMemo();
-        }, 300); // 타이핑 후 300ms 후에 저장
+        }, 300);
 
+        // 타이핑 종료 감지를 위한 타이머 설정
         typingTimer = setTimeout(() => {
+            // TYPING_INTERVAL 시간 동안 입력이 없으면 입력 종료로 간주
             isTyping = false;
         }, TYPING_INTERVAL);
     }
@@ -172,8 +184,10 @@ function handleMemoUpdate(data) {
     console.log('서버로부터 메모 업데이트 수신:', data);
     if (data.projectId === currentProjectId) {
         if (!isTyping) {
+            // 사용자가 입력 중이 아닐 때 즉시 업데이트
             updateMemo(data.content);
         } else {
+            // 사용자가 입력 중일 때 업데이트 연기
             console.log('사용자가 입력 중이어서 서버 업데이트를 연기합니다.');
             setTimeout(() => {
                 if (!isTyping) {
