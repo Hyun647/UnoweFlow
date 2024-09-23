@@ -2,7 +2,7 @@ let currentProjectId = null;
 let isEditorVisible = false; // 기본값을 false로 유지
 let isTyping = false;
 let typingTimer;
-const TYPING_INTERVAL = 2000; // 2초
+const TYPING_INTERVAL = 500; // 0.5초
 
 function showMemo(projectId) {
     currentProjectId = projectId;
