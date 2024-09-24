@@ -2,6 +2,7 @@ let socket;
 let projects = [];
 let todos = {};
 let projectAssignees = {};
+let reconnectInterval; // 재연결을 위한 인터벌 변수
 
 function initializeMainPage(authenticatedSocket) {
     console.log('메인 페이지 초기화');
@@ -10,6 +11,7 @@ function initializeMainPage(authenticatedSocket) {
     showProjectList();
     setupEventListeners();
     requestFullStateUpdate();
+    updateConnectionStatus(); // 초기 연결 상태 업데이트
 }
 
 function setupWebSocketHandlers() {
@@ -21,12 +23,36 @@ function setupWebSocketHandlers() {
 
     socket.onclose = (event) => {
         console.log('WebSocket 연결이 끊어졌습니다.');
-        // 재연결 로직 구현 (필요한 경우)
+        updateConnectionStatus(false); // 연결 상태 업데이트
+        reconnect(); // 재연결 시도
     };
 
     socket.onerror = (error) => {
         console.error('WebSocket 연결 오류:', error);
     };
+}
+
+function reconnect() {
+    if (reconnectInterval) return; // 이미 재연결 시도 중이면 종료
+    reconnectInterval = setInterval(() => {
+        console.log('서버에 재연결 시도 중...');
+        socket = new WebSocket(socket.url); // 기존 소켓 URL로 새 소켓 생성
+        socket.onopen = () => {
+            console.log('서버에 재연결되었습니다.');
+            clearInterval(reconnectInterval);
+            reconnectInterval = null;
+            updateConnectionStatus(true); // 연결 상태 업데이트
+            setupWebSocketHandlers(); // 핸들러 재설정
+            requestFullStateUpdate(); // 상태 업데이트 요청
+        };
+    }, 3000); // 3초마다 재연결 시도
+}
+
+function updateConnectionStatus(isConnected = true) {
+    const statusIndicator = document.getElementById('connection-status');
+    if (statusIndicator) {
+        statusIndicator.style.backgroundColor = isConnected ? 'green' : 'red';
+    }
 }
 
 function requestFullStateUpdate() {
