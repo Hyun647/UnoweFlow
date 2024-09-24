@@ -222,7 +222,7 @@ function createTodoTable(todos, projectId) {
             <tr>
                 <th>완료</th>
                 <th>내용</th>
-                <th>담자</th>
+                <th>담당자</th>
                 <th>우선순위</th>
                 <th>마감일</th>
                 <th>작업</th>
@@ -257,7 +257,7 @@ function createTodoRow(todo, projectId) {
         <td data-label="내용">
             <span class="todo-text">${todo.text}</span>
         </td>
-        <td data-label="담자">
+        <td data-label="담당자">
             <select class="todo-assignee" onchange="updateTodoAssignee('${todo.id}', this.value)">
                 <option value="">미지정</option>
                 ${getAssigneeOptions(projectId, todo.assignee)}
