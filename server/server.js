@@ -18,7 +18,7 @@ app.use(cors({
 app.use(express.json());
 
 const pool = mysql.createPool({
-    host: '110.15.29.199',
+    host: '116.122.245.60',
     port: 9876,
     user: 'root',
     password: '1590',
